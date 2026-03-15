@@ -1,0 +1,7 @@
+{
+  "name": "Skin Analysis Pro",
+  "description": "Full-stack application for skin analysis using Perfect Corp API, featuring real-time camera capture and analysis history.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
