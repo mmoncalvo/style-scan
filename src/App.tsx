@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Camera } from './components/Camera';
+import { ImageUpload } from './components/ImageUpload';
 import { AnalysisResult } from './components/AnalysisResult';
 import { History } from './components/History';
 import { SkinAnalysis } from './types';
-import { Sparkles, History as HistoryIcon, Camera as CameraIcon, AlertCircle } from 'lucide-react';
+import { Sparkles, History as HistoryIcon, Camera as CameraIcon, AlertCircle, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import axios from 'axios';
 
@@ -13,6 +14,7 @@ export default function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'camera' | 'result' | 'history'>('camera');
+  const [inputMethod, setInputMethod] = useState<'camera' | 'upload'>('camera');
 
   const fetchHistory = async () => {
     try {
@@ -98,12 +100,59 @@ export default function App() {
               <div className="text-center max-w-2xl mx-auto">
                 <h2 className="text-3xl font-bold text-white mb-4">Analiza tu piel en segundos</h2>
                 <p className="text-zinc-400">
-                  Usa la cámara para tomar una foto frontal de tu rostro. Nuestra IA analizará 
+                  Captura una foto o sube una imagen de tu rostro. Nuestra IA analizará 
                   múltiples parámetros para darte un reporte detallado.
                 </p>
               </div>
 
-              <Camera onCapture={handleCapture} isAnalyzing={isAnalyzing} />
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setInputMethod('camera')}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${
+                    inputMethod === 'camera' 
+                      ? 'bg-emerald-500 text-black border-emerald-500 shadow-lg shadow-emerald-500/20' 
+                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                  }`}
+                >
+                  <CameraIcon className="w-4 h-4" />
+                  Usar Cámara
+                </button>
+                <button
+                  onClick={() => setInputMethod('upload')}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${
+                    inputMethod === 'upload' 
+                      ? 'bg-emerald-500 text-black border-emerald-500 shadow-lg shadow-emerald-500/20' 
+                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                  }`}
+                >
+                  <Upload className="w-4 h-4" />
+                  Subir Imagen
+                </button>
+              </div>
+
+              <div className="min-h-[400px]">
+                <AnimatePresence mode="wait">
+                  {inputMethod === 'camera' ? (
+                    <motion.div
+                      key="camera-input"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                    >
+                      <Camera onCapture={handleCapture} isAnalyzing={isAnalyzing} />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="upload-input"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                    >
+                      <ImageUpload onUpload={handleCapture} isAnalyzing={isAnalyzing} />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {error && (
                 <div className="max-w-2xl mx-auto bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center gap-3 text-red-400">
