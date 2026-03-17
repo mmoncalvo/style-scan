@@ -65,12 +65,13 @@ const upload = multer({ storage: storage });
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 async function pollTask(taskId: string, apiKey: string, baseUrl: string) {
-  const maxAttempts = 30; // 60 seconds total with 2s interval
+  const maxAttempts = 100; // Increased attempts for robustness
   const intervalMs = 2000;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     console.log(`[pollTask] Attempt ${attempt} for task ${taskId}`);
-    const response = await axios.get(`${baseUrl}/${taskId}`, {
+    const pollUrl = `${baseUrl}/${encodeURIComponent(taskId)}`;
+    const response = await axios.get(pollUrl, {
       headers: {
         "Authorization": `Bearer ${apiKey}`
       }
@@ -151,10 +152,8 @@ async function startServer() {
       const imageBuffer = fs.readFileSync(req.file.path);
       const base64Image = imageBuffer.toString('base64');
 
-      // 2. Start Task using Base64 (JSON)
-      // Note: We include api_key in the body as it's common for S2S v2.0
+      // 2. Start Task (POST)
       const startResponse = await axios.post(baseUrl, {
-        api_key: apiKey,
         src_file_base64: base64Image,
         dst_actions: [],
         miniserver_args: {
@@ -163,7 +162,8 @@ async function startServer() {
         format: "json"
       }, {
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
         }
       });
 
