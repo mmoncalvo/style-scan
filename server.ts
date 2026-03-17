@@ -145,21 +145,25 @@ async function startServer() {
         return res.json(savedAnalysis);
       }
 
-      console.log(`[analyze] Starting task for file: ${req.file.filename}`);
+      console.log(`[analyze] Starting task for file: ${req.file.filename} (using Base64)`);
 
-      // 1. Start Task using direct file upload (Multipart)
-      const form = new FormData();
-      form.append('src_file', fs.createReadStream(req.file.path));
-      form.append('dst_actions', '[]');
-      form.append('miniserver_args', JSON.stringify({
-        enable_mask_overlay: false
-      }));
-      form.append('format', 'json');
+      // 1. Read file and convert to Base64
+      const imageBuffer = fs.readFileSync(req.file.path);
+      const base64Image = imageBuffer.toString('base64');
 
-      const startResponse = await axios.post(baseUrl, form, {
+      // 2. Start Task using Base64 (JSON)
+      // Note: We include api_key in the body as it's common for S2S v2.0
+      const startResponse = await axios.post(baseUrl, {
+        api_key: apiKey,
+        src_file_base64: base64Image,
+        dst_actions: [],
+        miniserver_args: {
+          enable_mask_overlay: false
+        },
+        format: "json"
+      }, {
         headers: {
-          ...form.getHeaders(),
-          "Authorization": `Bearer ${apiKey}`
+          "Content-Type": "application/json"
         }
       });
 
