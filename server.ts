@@ -6,6 +6,7 @@ import axios from "axios";
 import { Sequelize, DataTypes } from "sequelize";
 import dotenv from "dotenv";
 import fs from "fs";
+import FormData from "form-data";
 
 dotenv.config();
 
@@ -115,7 +116,6 @@ async function startServer() {
 
       const apiKey = process.env.PERFECT_CORP_API_KEY;
       const baseUrl = process.env.PERFECT_CORP_API_URL || "https://yce-api-01.makeupar.com/s2s/v2.0/task/skin-analysis";
-      const appUrl = process.env.APP_URL;
 
       if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
         console.warn("Using mock data because PERFECT_CORP_API_KEY is not configured.");
@@ -145,24 +145,20 @@ async function startServer() {
         return res.json(savedAnalysis);
       }
 
-      if (!appUrl) {
-        return res.status(500).json({ error: "APP_URL not configured. Required for Perfect Corp API to access the image." });
-      }
+      console.log(`[analyze] Starting task for file: ${req.file.filename}`);
 
-      const imageUrl = `${appUrl}/uploads/${req.file.filename}`;
-      console.log(`[analyze] Starting task for image: ${imageUrl}`);
+      // 1. Start Task using direct file upload (Multipart)
+      const form = new FormData();
+      form.append('src_file', fs.createReadStream(req.file.path));
+      form.append('dst_actions', '[]');
+      form.append('miniserver_args', JSON.stringify({
+        enable_mask_overlay: false
+      }));
+      form.append('format', 'json');
 
-      // 1. Start Task
-      const startResponse = await axios.post(baseUrl, {
-        src_file_url: imageUrl,
-        dst_actions: [],
-        miniserver_args: {
-          enable_mask_overlay: false
-        },
-        format: "json"
-      }, {
+      const startResponse = await axios.post(baseUrl, form, {
         headers: {
-          "Content-Type": "application/json",
+          ...form.getHeaders(),
           "Authorization": `Bearer ${apiKey}`
         }
       });
