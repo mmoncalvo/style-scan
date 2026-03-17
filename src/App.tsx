@@ -30,6 +30,7 @@ export default function App() {
   }, []);
 
   const handleCapture = async (blob: Blob) => {
+    // Start analysis process
     setIsAnalyzing(true);
     setError(null);
     

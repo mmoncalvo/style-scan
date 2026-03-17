@@ -5,11 +5,18 @@ import multer from "multer";
 import axios from "axios";
 import { Sequelize, DataTypes } from "sequelize";
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
+// Ensure uploads directory exists - re-applied
+const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
 
 // Database Setup
 const sequelize = new Sequelize({
@@ -43,8 +50,42 @@ const Analysis = sequelize.define('Analysis', {
 });
 
 // Multer Setup for image uploads
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
 const upload = multer({ storage: storage });
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+async function pollTask(taskId: string, apiKey: string, baseUrl: string) {
+  const maxAttempts = 30; // 60 seconds total with 2s interval
+  const intervalMs = 2000;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    console.log(`[pollTask] Attempt ${attempt} for task ${taskId}`);
+    const response = await axios.get(`${baseUrl}/${taskId}`, {
+      headers: {
+        "Authorization": `Bearer ${apiKey}`
+      }
+    });
+
+    const taskStatus = response.data?.data?.task_status;
+    if (taskStatus === 'success') {
+      return response.data?.data?.results;
+    }
+    if (taskStatus === 'error') {
+      throw new Error(`Task failed: ${JSON.stringify(response.data)}`);
+    }
+    await sleep(intervalMs);
+  }
+  throw new Error('Max attempts exceeded while polling');
+}
 
 async function startServer() {
   console.log("Starting server...");
@@ -58,6 +99,7 @@ async function startServer() {
   }
 
   app.use(express.json());
+  app.use('/uploads', express.static('uploads'));
   
   // Health check for the proxy
   app.get("/api/health", (req, res) => {
@@ -72,62 +114,101 @@ async function startServer() {
       }
 
       const apiKey = process.env.PERFECT_CORP_API_KEY;
-      // const apiUrl = process.env.PERFECT_CORP_API_URL || "https://api.perfectcorp.com/v1/skin-analysis";
+      const baseUrl = process.env.PERFECT_CORP_API_URL || "https://yce-api-01.makeupar.com/s2s/v2.0/task/skin-analysis";
+      const appUrl = process.env.APP_URL;
 
-      if (!apiKey) {
-        return res.status(500).json({ error: "API Key not configured" });
+      if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
+        console.warn("Using mock data because PERFECT_CORP_API_KEY is not configured.");
+        // Mock data fallback
+        const mockData = {
+          skinScore: 85,
+          skinAge: 25,
+          skinType: "Normal",
+          spots: 10,
+          wrinkles: 5,
+          texture: 15,
+          darkCircles: 20,
+          pores: 12,
+          redness: 8,
+          oiliness: 10,
+          moisture: 70,
+          eyebag: 5,
+          droopyEyelid: 2,
+          acne: 0
+        };
+        
+        const savedAnalysis = await Analysis.create({
+          ...mockData,
+          imageUrl: `/uploads/${req.file.filename}`,
+          rawResponse: JSON.stringify(mockData)
+        });
+        return res.json(savedAnalysis);
       }
 
-      let analysisData;
-      if (apiKey === "YOUR_API_KEY_HERE") {
-         // Mock data for demonstration if no real key is provided
-         analysisData = {
-           skinScore: 85,
-           skinAge: 25,
-           skinType: "Normal",
-           spots: 10,
-           wrinkles: 5,
-           texture: 15,
-           darkCircles: 20,
-           pores: 12,
-           redness: 8,
-           oiliness: 10,
-           moisture: 70,
-           eyebag: 5,
-           droopyEyelid: 2,
-           acne: 0
-         };
-      } else {
-        // Fallback to mock for now
-        analysisData = {
-           skinScore: Math.floor(Math.random() * 20) + 70,
-           skinAge: 28,
-           skinType: "Combination",
-           spots: 12,
-           wrinkles: 8,
-           texture: 18,
-           darkCircles: 25,
-           pores: 15,
-           redness: 10,
-           oiliness: 15,
-           moisture: 65,
-           eyebag: 7,
-           droopyEyelid: 3,
-           acne: 2
-         };
+      if (!appUrl) {
+        return res.status(500).json({ error: "APP_URL not configured. Required for Perfect Corp API to access the image." });
       }
+
+      const imageUrl = `${appUrl}/uploads/${req.file.filename}`;
+      console.log(`[analyze] Starting task for image: ${imageUrl}`);
+
+      // 1. Start Task
+      const startResponse = await axios.post(baseUrl, {
+        src_file_url: imageUrl,
+        dst_actions: [],
+        miniserver_args: {
+          enable_mask_overlay: false
+        },
+        format: "json"
+      }, {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        }
+      });
+
+      const taskId = startResponse.data?.data?.task_id;
+      if (!taskId) {
+        throw new Error(`task_id not found in response: ${JSON.stringify(startResponse.data)}`);
+      }
+
+      // 2. Poll Task
+      const results = await pollTask(taskId, apiKey, baseUrl);
+      console.log(`[analyze] Task ${taskId} succeeded`);
+
+      // 3. Map Results
+      // The API returns values in snake_case, mapping them to our model
+      const analysisData = {
+        skinScore: results.skin_score || 0,
+        skinAge: results.skin_age || 0,
+        skinType: results.skin_type || "Unknown",
+        spots: results.spots || 0,
+        wrinkles: results.wrinkles || 0,
+        texture: results.texture || 0,
+        darkCircles: results.dark_circles || 0,
+        pores: results.pores || 0,
+        redness: results.redness || 0,
+        oiliness: results.oiliness || 0,
+        moisture: results.moisture || 0,
+        eyebag: results.eyebag || 0,
+        droopyEyelid: results.droopy_eyelid || 0,
+        acne: results.acne || 0
+      };
 
       // Save to database
       const savedAnalysis = await Analysis.create({
         ...analysisData,
-        imageUrl: `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`,
-        rawResponse: JSON.stringify(analysisData)
+        imageUrl: `/uploads/${req.file.filename}`,
+        rawResponse: JSON.stringify(results)
       });
 
       res.json(savedAnalysis);
-    } catch (error) {
-      console.error("Analysis error:", error);
-      res.status(500).json({ error: "Failed to analyze skin" });
+    } catch (error: any) {
+      console.error("Analysis error:", error.response?.data || error.message);
+      res.status(500).json({ 
+        error: "Failed to analyze skin", 
+        details: error.response?.data || error.message 
+      });
     }
   });
 
