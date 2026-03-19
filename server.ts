@@ -7,7 +7,10 @@ import { Sequelize, DataTypes } from "sequelize";
 import dotenv from "dotenv";
 import fs from "fs";
 import FormData from "form-data";
+import { createRequire } from "module";
+import crypto from "crypto";
 
+const require = createRequire(import.meta.url);
 dotenv.config();
 
 const app = express();
@@ -15,21 +18,28 @@ const PORT = 3000;
 
 // Ensure uploads directory exists - re-applied
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+  fs.accessSync(UPLOADS_DIR, fs.constants.W_OK);
+  console.log(">>> [init] Uploads directory is writable.");
+} catch (err) {
+  console.error(">>> [init] Error with uploads directory:", err);
 }
 
 // Database Setup
 const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: './database.sqlite',
+  dialectModule: require('better-sqlite3'),
   logging: false
 });
 
 const Analysis = sequelize.define('Analysis', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.STRING,
+    defaultValue: () => crypto.randomUUID(),
     primaryKey: true
   },
   skinScore: DataTypes.INTEGER,
@@ -70,12 +80,16 @@ async function pollTask(taskId: string, apiKey: string, baseUrl: string) {
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     console.log(`[pollTask] Attempt ${attempt} for task ${taskId}`);
-    const pollUrl = `${baseUrl}/${encodeURIComponent(taskId)}`;
+    // If baseUrl already contains the taskId, don't append it again
+    const pollUrl = baseUrl.includes(taskId) ? baseUrl : `${baseUrl}/${encodeURIComponent(taskId)}`;
+    console.log(`[pollTask] GET ${pollUrl}`);
     const response = await axios.get(pollUrl, {
       headers: {
         "Authorization": `Bearer ${apiKey}`
       }
     });
+
+    console.log(`[pollTask] Response:`, JSON.stringify(response.data));
 
     const taskStatus = response.data?.data?.task_status;
     if (taskStatus === 'success') {
@@ -89,23 +103,47 @@ async function pollTask(taskId: string, apiKey: string, baseUrl: string) {
   throw new Error('Max attempts exceeded while polling');
 }
 
-async function startServer() {
-  console.log("Starting server...");
-  try {
-    await sequelize.authenticate();
-    console.log("Database connection established.");
-    await sequelize.sync();
-    console.log("Database synced.");
-  } catch (err) {
-    console.error("Unable to connect to the database:", err);
-  }
+let isDbReady = false;
 
+async function startServer() {
+  console.log(">>> [startServer] Initializing...");
+  
   app.use(express.json());
   app.use('/uploads', express.static('uploads'));
+
+  try {
+    console.log(">>> [startServer] Authenticating database...");
+    await sequelize.authenticate();
+    console.log(">>> [startServer] Database connection established.");
+    await sequelize.sync();
+    console.log(">>> [startServer] Database synced.");
+    isDbReady = true;
+  } catch (err) {
+    console.error(">>> [startServer] Unable to connect to the database:", err);
+  }
+
+  // Middleware to check DB readiness
+  app.use((req, res, next) => {
+    if (!isDbReady && req.path.startsWith('/api')) {
+      return res.status(503).json({ error: "Database is initializing, please try again in a moment." });
+    }
+    next();
+  });
   
   // Health check for the proxy
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  app.get("/api/health", async (req, res) => {
+    let dbStatus = "unknown";
+    try {
+      await sequelize.query('SELECT 1');
+      dbStatus = "connected";
+    } catch (err) {
+      dbStatus = "error";
+    }
+    res.json({ 
+      status: "ok", 
+      database: dbStatus,
+      timestamp: new Date().toISOString() 
+    });
   });
 
   // API Routes
@@ -153,9 +191,10 @@ async function startServer() {
       const base64Image = imageBuffer.toString('base64');
 
       // 2. Start Task (POST)
+      console.log(`[analyze] Sending POST to ${baseUrl}`);
       const startResponse = await axios.post(baseUrl, {
         src_file_base64: base64Image,
-        dst_actions: [],
+        dst_actions: ["skin_analysis"],
         miniserver_args: {
           enable_mask_overlay: false
         },
@@ -167,32 +206,45 @@ async function startServer() {
         }
       });
 
+      console.log(`[analyze] Start Response:`, JSON.stringify(startResponse.data));
+
       const taskId = startResponse.data?.data?.task_id;
       if (!taskId) {
         throw new Error(`task_id not found in response: ${JSON.stringify(startResponse.data)}`);
       }
 
       // 2. Poll Task
-      const results = await pollTask(taskId, apiKey, baseUrl);
+      // Use task_status_url if provided, otherwise construct it
+      const taskStatusUrl = startResponse.data?.data?.task_status_url;
+      // If no URL provided, we assume polling is at /task/{taskId}
+      // baseUrl is usually /task/skin-analysis, so we strip the action part
+      const defaultPollUrl = baseUrl.includes('/skin-analysis') 
+        ? baseUrl.split('/skin-analysis')[0] 
+        : baseUrl;
+      
+      const results = await pollTask(taskId, apiKey, taskStatusUrl || defaultPollUrl);
       console.log(`[analyze] Task ${taskId} succeeded`);
 
       // 3. Map Results
       // The API returns values in snake_case, mapping them to our model
+      // Results are typically nested under skin_analysis action
+      const skinData = results.skin_analysis || results;
+      
       const analysisData = {
-        skinScore: results.skin_score || 0,
-        skinAge: results.skin_age || 0,
-        skinType: results.skin_type || "Unknown",
-        spots: results.spots || 0,
-        wrinkles: results.wrinkles || 0,
-        texture: results.texture || 0,
-        darkCircles: results.dark_circles || 0,
-        pores: results.pores || 0,
-        redness: results.redness || 0,
-        oiliness: results.oiliness || 0,
-        moisture: results.moisture || 0,
-        eyebag: results.eyebag || 0,
-        droopyEyelid: results.droopy_eyelid || 0,
-        acne: results.acne || 0
+        skinScore: skinData.skin_score || 0,
+        skinAge: skinData.skin_age || 0,
+        skinType: skinData.skin_type || "Unknown",
+        spots: skinData.spots || 0,
+        wrinkles: skinData.wrinkles || 0,
+        texture: skinData.texture || 0,
+        darkCircles: skinData.dark_circles || 0,
+        pores: skinData.pores || 0,
+        redness: skinData.redness || 0,
+        oiliness: skinData.oiliness || 0,
+        moisture: skinData.moisture || 0,
+        eyebag: skinData.eyebag || 0,
+        droopyEyelid: skinData.droopy_eyelid || 0,
+        acne: skinData.acne || 0
       };
 
       // Save to database
@@ -214,23 +266,38 @@ async function startServer() {
 
   app.get("/api/history", async (req, res) => {
     try {
+      console.log(">>> [api/history] Fetching analysis history...");
       const history = await Analysis.findAll({
         order: [['createdAt', 'DESC']],
         limit: 10
       });
+      console.log(`>>> [api/history] Found ${history.length} records.`);
       res.json(history);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch history" });
+    } catch (error: any) {
+      console.error(">>> [api/history] Error fetching history:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch history",
+        details: error.message 
+      });
     }
   });
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+    try {
+      console.log(">>> [startServer] Starting Vite in middleware mode...");
+      const vite = await createViteServer({
+        server: { 
+          middlewareMode: true,
+          hmr: false // Disable HMR in middleware mode to avoid conflicts
+        },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      console.log(">>> [startServer] Vite middleware attached.");
+    } catch (viteError) {
+      console.error(">>> [startServer] Failed to start Vite middleware:", viteError);
+    }
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
@@ -240,17 +307,18 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`>>> Server is listening on port ${PORT}`);
-    console.log(`>>> Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`>>> [startServer] Server is listening on port ${PORT}`);
+    console.log(`>>> [startServer] Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('>>> [CRASH] Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception thrown:', err);
+  console.error('>>> [CRASH] Uncaught Exception thrown:', err);
+  process.exit(1); // Exit with error code to trigger restart
 });
 
 startServer().catch(err => {

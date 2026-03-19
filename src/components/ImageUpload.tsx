@@ -70,7 +70,7 @@ export function ImageUpload({ onUpload, isAnalyzing }: ImageUploadProps) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`relative aspect-video rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center p-8 text-center cursor-pointer
+            className={`relative aspect-[4/3] rounded-3xl border-2 border-dashed transition-all flex flex-col items-center justify-center p-8 text-center cursor-pointer
               ${dragActive ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-800 bg-zinc-900/30 hover:bg-zinc-900/50'}`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -104,7 +104,7 @@ export function ImageUpload({ onUpload, isAnalyzing }: ImageUploadProps) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative aspect-video rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-800"
+            className="relative aspect-[4/3] rounded-3xl overflow-hidden bg-zinc-900 border border-zinc-800"
           >
             <img src={preview} alt="Preview" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />

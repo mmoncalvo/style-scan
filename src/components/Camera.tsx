@@ -29,8 +29,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: 'user', 
-          width: { ideal: 1280 }, 
-          height: { ideal: 720 } 
+          aspectRatio: { ideal: 4 / 3 },
+          width: { ideal: 1024 }, 
+          height: { ideal: 768 } 
         },
         audio: false
       });
@@ -55,8 +56,13 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   }, [stream]);
 
   useEffect(() => {
-    startCamera();
-    return () => stopCamera();
+    const timer = setTimeout(() => {
+      startCamera();
+    }, 1000);
+    return () => {
+      clearTimeout(timer);
+      stopCamera();
+    };
   }, [startCamera]);
 
   useEffect(() => {
@@ -98,7 +104,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   };
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto aspect-video bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+    <div className="relative w-full max-w-2xl mx-auto aspect-[4/3] bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
       <AnimatePresence mode="wait">
         {!capturedImage ? (
           <motion.div
