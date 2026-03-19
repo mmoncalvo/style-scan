@@ -8,9 +8,11 @@ import dotenv from "dotenv";
 import fs from "fs";
 import FormData from "form-data";
 import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 import crypto from "crypto";
 
-const require = createRequire(import.meta.url);
+const sqlite3 = require("sqlite3");
+const sqlite3Verbose = sqlite3.verbose();
 dotenv.config();
 
 const app = express();
@@ -29,11 +31,12 @@ try {
 }
 
 // Database Setup
+console.log(">>> [init] Configuring Sequelize (In-Memory)...");
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: './database.sqlite',
-  dialectModule: require('better-sqlite3'),
-  logging: false
+  storage: ':memory:',
+  dialectModule: sqlite3Verbose,
+  logging: console.log
 });
 
 const Analysis = sequelize.define('Analysis', {
@@ -111,33 +114,24 @@ async function startServer() {
   app.use(express.json());
   app.use('/uploads', express.static('uploads'));
 
-  try {
-    console.log(">>> [startServer] Authenticating database...");
-    await sequelize.authenticate();
-    console.log(">>> [startServer] Database connection established.");
-    await sequelize.sync();
-    console.log(">>> [startServer] Database synced.");
-    isDbReady = true;
-  } catch (err) {
-    console.error(">>> [startServer] Unable to connect to the database:", err);
-  }
-
   // Middleware to check DB readiness
   app.use((req, res, next) => {
-    if (!isDbReady && req.path.startsWith('/api')) {
+    if (!isDbReady && req.path.startsWith('/api') && req.path !== '/api/health') {
+      console.log(`>>> [middleware] DB not ready, blocking request to ${req.path}`);
       return res.status(503).json({ error: "Database is initializing, please try again in a moment." });
     }
     next();
   });
-  
+
   // Health check for the proxy
   app.get("/api/health", async (req, res) => {
-    let dbStatus = "unknown";
-    try {
-      await sequelize.query('SELECT 1');
-      dbStatus = "connected";
-    } catch (err) {
-      dbStatus = "error";
+    let dbStatus = isDbReady ? "connected" : "initializing";
+    if (isDbReady) {
+      try {
+        await sequelize.query('SELECT 1');
+      } catch (err) {
+        dbStatus = "error";
+      }
     }
     res.json({ 
       status: "ok", 
@@ -145,6 +139,8 @@ async function startServer() {
       timestamp: new Date().toISOString() 
     });
   });
+
+  // ... (rest of the routes will be here)
 
   // API Routes
   app.post("/api/analyze", upload.single('image'), async (req: any, res) => {
@@ -289,7 +285,7 @@ async function startServer() {
       const vite = await createViteServer({
         server: { 
           middlewareMode: true,
-          hmr: false // Disable HMR in middleware mode to avoid conflicts
+          hmr: false 
         },
         appType: "spa",
       });
@@ -306,9 +302,25 @@ async function startServer() {
     });
   }
 
+  console.log(">>> [startServer] Attempting to listen on port", PORT);
+  // Start listening IMMEDIATELY
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`>>> [startServer] Server is listening on port ${PORT}`);
     console.log(`>>> [startServer] Environment: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Initialize database in the background
+    (async () => {
+      try {
+        console.log(">>> [db] Authenticating database...");
+        await sequelize.authenticate();
+        console.log(">>> [db] Database connection established.");
+        await sequelize.sync();
+        console.log(">>> [db] Database synced.");
+        isDbReady = true;
+      } catch (err) {
+        console.error(">>> [db] Unable to connect to the database:", err);
+      }
+    })();
   });
 }
 
