@@ -65,11 +65,10 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     };
   }, [startCamera]);
 
-  const handleVideoRef = useCallback((node: HTMLVideoElement | null) => {
-    videoRef.current = node;
-    if (node && stream) {
-      node.srcObject = stream;
-      node.play().catch(err => {
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(err => {
         console.error("Error playing video:", err);
       });
     }
@@ -116,7 +115,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             className="relative w-full h-full"
           >
             <video
-              ref={handleVideoRef}
+              ref={videoRef}
               autoPlay
               playsInline
               muted

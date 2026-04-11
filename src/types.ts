@@ -16,6 +16,4 @@ export interface SkinAnalysis {
   acne: number;
   imageUrl: string;
   createdAt: string;
-  isMock?: boolean;
-  masks?: Record<string, string>;
 }

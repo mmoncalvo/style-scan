@@ -10,8 +10,6 @@ import FormData from "form-data";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 import crypto from "crypto";
-import https from "https";
-import { execSync } from "child_process";
 
 const sqlite3 = require("sqlite3");
 const sqlite3Verbose = sqlite3.verbose();
@@ -33,13 +31,12 @@ try {
 }
 
 // Database Setup
-console.log(">>> [init] Configuring Sequelize...");
+console.log(">>> [init] Configuring Sequelize (In-Memory)...");
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(process.cwd(), 'database.sqlite'),
+  storage: ':memory:',
   dialectModule: sqlite3Verbose,
-  // logging: console.log,
-  logging: false
+  logging: console.log
 });
 
 const Analysis = sequelize.define('Analysis', {
@@ -63,12 +60,7 @@ const Analysis = sequelize.define('Analysis', {
   droopyEyelid: DataTypes.INTEGER,
   acne: DataTypes.INTEGER,
   imageUrl: DataTypes.STRING,
-  rawResponse: DataTypes.TEXT,
-  masks: DataTypes.TEXT,
-  isMock: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  }
+  rawResponse: DataTypes.TEXT
 });
 
 // Multer Setup for image uploads
@@ -94,20 +86,30 @@ async function pollTask(taskId: string, apiKey: string, baseUrl: string) {
     // If baseUrl already contains the taskId, don't append it again
     const pollUrl = baseUrl.includes(taskId) ? baseUrl : `${baseUrl}/${encodeURIComponent(taskId)}`;
     console.log(`[pollTask] GET ${pollUrl}`);
-    const response = await axios.get(pollUrl, {
-      headers: {
-        "Authorization": `Bearer ${apiKey}`
+    
+    try {
+      const response = await axios.get(pollUrl, {
+        headers: {
+          "Authorization": `Bearer ${apiKey}`
+        }
+      });
+
+      console.log(`[pollTask] Status: ${response.status} ${response.statusText}`);
+      console.log(`[pollTask] Response Data:`, JSON.stringify(response.data, null, 2));
+
+      const taskStatus = response.data?.data?.task_status;
+      if (taskStatus === 'success') {
+        console.log(`[pollTask] Task ${taskId} succeeded!`);
+        return response.data?.data?.results;
       }
-    });
-
-    console.log(`[pollTask] Response:`, JSON.stringify(response.data));
-
-    const taskStatus = response.data?.data?.task_status;
-    if (taskStatus === 'success') {
-      return response.data?.data?.results;
-    }
-    if (taskStatus === 'error') {
-      throw new Error(`Task failed: ${JSON.stringify(response.data)}`);
+      if (taskStatus === 'error') {
+        console.error(`[pollTask] Task ${taskId} reported error:`, JSON.stringify(response.data?.data?.error_msg || response.data?.data));
+        throw new Error(`Task failed: ${JSON.stringify(response.data)}`);
+      }
+      console.log(`[pollTask] Task ${taskId} status: ${taskStatus}. Waiting...`);
+    } catch (pollErr: any) {
+      console.error(`[pollTask] Error during polling attempt ${attempt}:`, pollErr.response?.data || pollErr.message);
+      if (attempt === maxAttempts) throw pollErr;
     }
     await sleep(intervalMs);
   }
@@ -118,7 +120,8 @@ let isDbReady = false;
 
 async function startServer() {
   console.log(">>> [startServer] Initializing...");
-
+  console.log(">>> [startServer] Env keys:", Object.keys(process.env).filter(k => k.includes('PERFECT')));
+  
   app.use(express.json());
   app.use('/uploads', express.static('uploads'));
 
@@ -141,10 +144,10 @@ async function startServer() {
         dbStatus = "error";
       }
     }
-    res.json({
-      status: "ok",
+    res.json({ 
+      status: "ok", 
       database: dbStatus,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString() 
     });
   });
 
@@ -158,8 +161,14 @@ async function startServer() {
       }
 
       const apiKey = process.env.PERFECT_CORP_API_KEY;
-      const baseUrl = process.env.PERFECT_CORP_API_URL || "https://yce-api-01.makeupar.com/s2s/v2.0";
-      const startTaskUrl = `${baseUrl}/task/skin-analysis`;
+      let baseUrl = process.env.PERFECT_CORP_API_URL || "https://yce-api-01.makeupar.com/s2s/v2.0/task/skin-analysis";
+      
+      // Auto-fix common URL truncation issues
+      if (baseUrl.endsWith('/v2.0') || baseUrl.endsWith('/v2.0/')) {
+        const originalUrl = baseUrl;
+        baseUrl = baseUrl.replace(/\/$/, '') + '/task/skin-analysis';
+        console.warn(`[analyze] API URL appeared truncated (${originalUrl}), adjusted to: ${baseUrl}`);
+      }
 
       if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
         console.warn("Using mock data because PERFECT_CORP_API_KEY is not configured.");
@@ -180,7 +189,7 @@ async function startServer() {
           droopyEyelid: 2,
           acne: 0
         };
-
+        
         const savedAnalysis = await Analysis.create({
           ...mockData,
           imageUrl: `/uploads/${req.file.filename}`,
@@ -190,60 +199,36 @@ async function startServer() {
       }
 
       console.log(`[analyze] Starting task for file: ${req.file.filename} (using Base64)`);
+      console.log(`[analyze] API URL: ${baseUrl}`);
+      console.log(`[analyze] API Key (first 4 chars): ${apiKey ? apiKey.substring(0, 4) : 'MISSING'}...`);
 
-      // 1. Construct the public image URL so Perfect Corp can download it
-      const appUrl = process.env.APP_URL || "http://localhost:3000";
-      const cleanAppUrl = appUrl.replace(/\/$/, "");
-      const publicImageUrl = `${cleanAppUrl}/uploads/${req.file.filename}`;
-      
-      console.log(`[analyze] Public Image URL for API: ${publicImageUrl}`);
+      // 1. Read file and convert to Base64
+      const imageBuffer = fs.readFileSync(req.file.path);
+      const base64Image = imageBuffer.toString('base64');
+      console.log(`[analyze] Image read, Base64 length: ${base64Image.length}`);
 
       // 2. Start Task (POST)
-      console.log(`[analyze] Sending POST to ${startTaskUrl}`);
-      let startResponse;
-      try {
-        startResponse = await axios.post(startTaskUrl, {
-          src_file_url: publicImageUrl,
-          dst_actions: [
-            "wrinkle", "pore", "texture", "acne", "oiliness",
-            "eye_bag", "age_spot", "dark_circle_v2",
-            "droopy_upper_eyelid", "droopy_lower_eyelid",
-            "moisture", "redness", "skin_type"
-          ],
-          miniserver_args: {
-            enable_mask_overlay: false
-          },
-          format: "json"
-        }, {
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`
-          }
-        });
-      } catch (err: any) {
-        if (err.response?.data?.error_code === 'CreditInsufficiency') {
-          console.warn("[analyze] API key out of credits! Falling back to mock data.");
-          const mockData = {
-            skinScore: 82, skinAge: 27, skinType: "Mixta", spots: 8, wrinkles: 12,
-            texture: 18, darkCircles: 25, pores: 14, redness: 10, oiliness: 20,
-            moisture: 65, eyebag: 15, droopyEyelid: 5, acne: 3
-          };
-          const savedAnalysis = await Analysis.create({
-            ...mockData,
-            masks: "{}",
-            isMock: true,
-            imageUrl: `/uploads/${req.file.filename}`,
-            rawResponse: JSON.stringify(err.response.data)
-          });
-          
-          const jsonRes = savedAnalysis.toJSON();
-          jsonRes.masks = {};
-          return res.json(jsonRes);
+      const requestBody = {
+        src_file_base64: base64Image,
+        dst_actions: ["skin_analysis"],
+        miniserver_args: {
+          enable_mask_overlay: false
+        },
+        format: "json"
+      };
+      
+      console.log(`[analyze] Sending POST to ${baseUrl}`);
+      console.log(`[analyze] Request Body Keys: ${Object.keys(requestBody).join(', ')}`);
+      
+      const startResponse = await axios.post(baseUrl, requestBody, {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
         }
-        throw err;
-      }
+      });
 
-      console.log(`[analyze] Start Response:`, JSON.stringify(startResponse.data));
+      console.log(`[analyze] Start Response Status: ${startResponse.status} ${startResponse.statusText}`);
+      console.log(`[analyze] Start Response Data:`, JSON.stringify(startResponse.data, null, 2));
 
       const taskId = startResponse.data?.data?.task_id;
       if (!taskId) {
@@ -253,79 +238,57 @@ async function startServer() {
       // 2. Poll Task
       // Use task_status_url if provided, otherwise construct it
       const taskStatusUrl = startResponse.data?.data?.task_status_url;
-      const defaultPollUrl = `${baseUrl}/task/skin-analysis`;
-
+      // If no URL provided, we assume polling is at /task/{taskId}
+      // baseUrl is usually /task/skin-analysis, so we strip the action part
+      const defaultPollUrl = baseUrl.includes('/skin-analysis') 
+        ? baseUrl.split('/skin-analysis')[0] 
+        : baseUrl;
+      
       const results = await pollTask(taskId, apiKey, taskStatusUrl || defaultPollUrl);
       console.log(`[analyze] Task ${taskId} succeeded`);
 
       // 3. Map Results
-      const rList = results?.output || [];
+      // The API returns values in snake_case, mapping them to our model
+      // Results are typically nested under skin_analysis action
+      const skinData = results.skin_analysis || results;
       
-      const rObj: Record<string, any> = {};
-      const masksObj: Record<string, string> = {};
-      
-      console.log("[analyze] Descargando y convirtiendo capas/masks a Base64...");
-      // Convert to for...of to allow await inside the loop
-      for (const item of rList) {
-        rObj[item.type] = item;
-        if (item.mask_urls && item.mask_urls.length > 0) {
-           const maskUrl = item.mask_urls[0];
-           try {
-             // Download the mask image
-             const imgRes = await axios.get(maskUrl, { responseType: 'arraybuffer' });
-             const contentType = imgRes.headers['content-type'] || 'image/png';
-             const base64Data = Buffer.from(imgRes.data, 'binary').toString('base64');
-             masksObj[item.type] = `data:${contentType};base64,${base64Data}`;
-           } catch (e: any) {
-             console.error(`[analyze] No se pudo descargar la capa para ${item.type}: ${e.message}`);
-             // Si falla la descarga, guardamos la URL como fallback temporal
-             masksObj[item.type] = maskUrl;
-           }
-        }
-      }
-
-      // Helper to extract score or value (now handles ui_score, raw_score or score)
-      const getVal = (obj: any) => obj?.ui_score ?? obj?.score ?? obj?.value ?? 0;
-
       const analysisData = {
-        skinScore: getVal(rObj['all']) || 85, 
-        skinAge: getVal(rObj['skin_age']) || 25,
-        skinType: rObj['skin_type']?.skin_type || "Unknown",
-        spots: getVal(rObj['age_spot']),
-        wrinkles: getVal(rObj['wrinkle']),
-        texture: getVal(rObj['texture']),
-        darkCircles: getVal(rObj['dark_circle_v2']),
-        pores: getVal(rObj['pore']),
-        redness: getVal(rObj['redness']),
-        oiliness: getVal(rObj['oiliness']),
-        moisture: getVal(rObj['moisture']),
-        eyebag: getVal(rObj['eye_bag']),
-        droopyEyelid: Math.max(getVal(rObj['droopy_upper_eyelid']), getVal(rObj['droopy_lower_eyelid'])),
-        acne: getVal(rObj['acne'])
+        skinScore: skinData.skin_score || 0,
+        skinAge: skinData.skin_age || 0,
+        skinType: skinData.skin_type || "Unknown",
+        spots: skinData.spots || 0,
+        wrinkles: skinData.wrinkles || 0,
+        texture: skinData.texture || 0,
+        darkCircles: skinData.dark_circles || 0,
+        pores: skinData.pores || 0,
+        redness: skinData.redness || 0,
+        oiliness: skinData.oiliness || 0,
+        moisture: skinData.moisture || 0,
+        eyebag: skinData.eyebag || 0,
+        droopyEyelid: skinData.droopy_eyelid || 0,
+        acne: skinData.acne || 0
       };
 
       // Save to database
       const savedAnalysis = await Analysis.create({
         ...analysisData,
-        masks: JSON.stringify(masksObj),
         imageUrl: `/uploads/${req.file.filename}`,
         rawResponse: JSON.stringify(results)
       });
 
-      // Parse it back to object before sending to frontend
-      const jsonRes = savedAnalysis.toJSON();
-      try {
-        jsonRes.masks = JSON.parse(jsonRes.masks);
-      } catch (e) {
-        jsonRes.masks = {};
-      }
-
-      res.json(jsonRes);
+      res.json(savedAnalysis);
     } catch (error: any) {
-      console.error("Analysis error:", error.response?.data || error.message);
-      res.status(500).json({
-        error: "Failed to analyze skin",
-        details: error.response?.data || error.message
+      console.error(">>> [analyze] CRITICAL ERROR:");
+      if (error.response) {
+        console.error(`[analyze] Status: ${error.response.status}`);
+        console.error(`[analyze] Data:`, JSON.stringify(error.response.data, null, 2));
+        console.error(`[analyze] Headers:`, JSON.stringify(error.response.headers, null, 2));
+      } else {
+        console.error(`[analyze] Message: ${error.message}`);
+      }
+      res.status(500).json({ 
+        error: "Failed to analyze skin", 
+        details: error.response?.data || error.message 
       });
     }
   });
@@ -337,43 +300,13 @@ async function startServer() {
         order: [['createdAt', 'DESC']],
         limit: 10
       });
-      const parsedHistory = history.map(record => {
-        const jsonRecord = record.toJSON();
-        try {
-          if (typeof jsonRecord.masks === 'string') {
-            jsonRecord.masks = JSON.parse(jsonRecord.masks);
-          }
-        } catch (e) {
-          jsonRecord.masks = {};
-        }
-        return jsonRecord;
-      });
-      console.log(`>>> [api/history] Found ${parsedHistory.length} records.`);
-      res.json(parsedHistory);
+      console.log(`>>> [api/history] Found ${history.length} records.`);
+      res.json(history);
     } catch (error: any) {
       console.error(">>> [api/history] Error fetching history:", error);
-      res.status(500).json({
+      res.status(500).json({ 
         error: "Failed to fetch history",
-        details: error.message
-      });
-    }
-  });
-
-  app.delete("/api/history/:id", async (req, res) => {
-    try {
-      console.log(`>>> [api/history] Deleting record ${req.params.id}...`);
-      const deletedCount = await Analysis.destroy({
-        where: { id: req.params.id }
-      });
-      if (deletedCount === 0) {
-        return res.status(404).json({ error: "Record not found" });
-      }
-      res.json({ success: true });
-    } catch (error: any) {
-      console.error(">>> [api/history] Error deleting record:", error);
-      res.status(500).json({
-        error: "Failed to delete record",
-        details: error.message
+        details: error.message 
       });
     }
   });
@@ -383,9 +316,9 @@ async function startServer() {
     try {
       console.log(">>> [startServer] Starting Vite in middleware mode...");
       const vite = await createViteServer({
-        server: {
+        server: { 
           middlewareMode: true,
-          hmr: false
+          hmr: false 
         },
         appType: "spa",
       });
@@ -403,28 +336,11 @@ async function startServer() {
   }
 
   console.log(">>> [startServer] Attempting to listen on port", PORT);
-
-  // Setup HTTPS
-  const HTTPS_PORT = process.env.HTTPS_PORT ? parseInt(process.env.HTTPS_PORT, 10) : 3001;
-  const keyPath = path.join(process.cwd(), 'server.key');
-  const certPath = path.join(process.cwd(), 'server.cert');
-
-  // Generate certs automatically if they don't exist
-  if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-    console.log(">>> [startServer] HTTPS certificates missing. Generating self-signed certificates...");
-    try {
-      execSync('openssl req -nodes -new -x509 -keyout server.key -out server.cert -days 365 -subj "/CN=localhost"');
-      console.log(">>> [startServer] Certificates generated successfully.");
-    } catch (e: any) {
-      console.error(">>> [startServer] Failed to generate certificates:", e.message);
-    }
-  }
-
-  // Start listening on HTTP IMMEDIATELY
+  // Start listening IMMEDIATELY
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`>>> [startServer] HTTP Server is listening on port ${PORT}`);
+    console.log(`>>> [startServer] Server is listening on port ${PORT}`);
     console.log(`>>> [startServer] Environment: ${process.env.NODE_ENV || 'development'}`);
-
+    
     // Initialize database in the background
     (async () => {
       try {
@@ -439,21 +355,6 @@ async function startServer() {
       }
     })();
   });
-
-  // Start listening on HTTPS
-  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
-    try {
-      const httpsOptions = {
-        key: fs.readFileSync(keyPath),
-        cert: fs.readFileSync(certPath)
-      };
-      https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", () => {
-        console.log(`>>> [startServer] HTTPS Server is listening on port ${HTTPS_PORT}`);
-      });
-    } catch (err) {
-      console.error(">>> [startServer] Failed to start HTTPS server:", err);
-    }
-  }
 }
 
 process.on('unhandledRejection', (reason, promise) => {

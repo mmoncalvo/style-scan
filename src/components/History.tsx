@@ -1,15 +1,14 @@
 import React from 'react';
 import { SkinAnalysis } from '../types';
 import { motion } from 'motion/react';
-import { Clock, ChevronRight, Trash2 } from 'lucide-react';
+import { Clock, ChevronRight } from 'lucide-react';
 
 interface HistoryProps {
   history: SkinAnalysis[];
   onSelect: (result: SkinAnalysis) => void;
-  onDelete: (id: string) => void;
 }
 
-export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete }) => {
+export const History: React.FC<HistoryProps> = ({ history, onSelect }) => {
   if (history.length === 0) return null;
 
   return (
@@ -20,13 +19,13 @@ export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete })
       </div>
       <div className="grid gap-3">
         {history.map((item, idx) => (
-          <motion.div
+          <motion.button
             key={item.id}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.1 }}
             onClick={() => onSelect(item)}
-            className="w-full flex items-center gap-4 p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:bg-zinc-800 transition-colors group text-left cursor-pointer"
+            className="w-full flex items-center gap-4 p-3 bg-zinc-900 border border-zinc-800 rounded-xl hover:bg-zinc-800 transition-colors group text-left"
           >
             <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-zinc-700">
               <img src={item.imageUrl} alt="History" className="w-full h-full object-cover" />
@@ -39,22 +38,12 @@ export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete })
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-emerald-400 font-bold">{Math.round(item.skinScore * 100) / 100}</div>
+                <div className="text-emerald-400 font-bold">{item.skinScore}</div>
                 <div className="text-[10px] text-zinc-500 uppercase tracking-tighter">Score</div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(item.id);
-                }}
-                className="p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors ml-2"
-                title="Eliminar historial"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-              <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-emerald-500 transition-colors" />
+              <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
             </div>
-          </motion.div>
+          </motion.button>
         ))}
       </div>
     </div>
