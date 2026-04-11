@@ -6,13 +6,13 @@ import { History } from './components/History';
 import { SkinAnalysis } from './types';
 import { Sparkles, History as HistoryIcon, Camera as CameraIcon, AlertCircle, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Toaster, toast } from 'sonner';
 import axios from 'axios';
 
 export default function App() {
   const [currentResult, setCurrentResult] = useState<SkinAnalysis | null>(null);
   const [history, setHistory] = useState<SkinAnalysis[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'camera' | 'result' | 'history'>('camera');
   const [inputMethod, setInputMethod] = useState<'camera' | 'upload'>('camera');
 
@@ -32,7 +32,6 @@ export default function App() {
   const handleCapture = async (blob: Blob) => {
     // Start analysis process
     setIsAnalyzing(true);
-    setError(null);
     
     const formData = new FormData();
     formData.append('image', blob, 'capture.jpg');
@@ -41,12 +40,14 @@ export default function App() {
       const response = await axios.post('/api/analyze', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      console.log("🚀 ~ handleCapture ~ response:", response)
       setCurrentResult(response.data);
       setView('result');
       fetchHistory();
+      toast.success("Análisis completado con éxito");
     } catch (err) {
       console.error("Analysis failed:", err);
-      setError("El análisis falló. Por favor intenta de nuevo.");
+      toast.error("El análisis falló. Por favor intenta de nuevo.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -57,8 +58,24 @@ export default function App() {
     setView('result');
   };
 
+  const handleDeleteHistory = async (id: string) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este análisis? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/history/${id}`);
+      fetchHistory();
+      toast.success("Análisis eliminado correctamente");
+    } catch (err) {
+      console.error("Error deleting history:", err);
+      toast.error("No se pudo eliminar el historial. Por favor intenta de nuevo.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-emerald-500/30">
+      <Toaster theme="dark" position="bottom-right" />
       {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -154,13 +171,6 @@ export default function App() {
                   )}
                 </AnimatePresence>
               </div>
-
-              {error && (
-                <div className="max-w-2xl mx-auto bg-red-500/10 border border-red-500/20 p-4 rounded-xl flex items-center gap-3 text-red-400">
-                  <AlertCircle className="w-5 h-5" />
-                  <p className="text-sm font-medium">{error}</p>
-                </div>
-              )}
             </motion.div>
           )}
 
@@ -197,7 +207,7 @@ export default function App() {
                 <h2 className="text-3xl font-bold text-white mb-4">Tu Historial</h2>
                 <p className="text-zinc-400">Revisa tus análisis anteriores y observa tu progreso.</p>
               </div>
-              <History history={history} onSelect={handleSelectHistory} />
+              <History history={history} onSelect={handleSelectHistory} onDelete={handleDeleteHistory} />
               {history.length === 0 && (
                 <div className="text-center py-20 bg-zinc-900/30 rounded-3xl border border-zinc-800 border-dashed">
                   <HistoryIcon className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
