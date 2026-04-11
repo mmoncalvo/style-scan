@@ -32,7 +32,7 @@ export default function App() {
   const handleCapture = async (blob: Blob) => {
     // Start analysis process
     setIsAnalyzing(true);
-    
+
     const formData = new FormData();
     formData.append('image', blob, 'capture.jpg');
 
@@ -59,23 +59,33 @@ export default function App() {
   };
 
   const handleDeleteHistory = async (id: string) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este análisis? Esta acción no se puede deshacer.")) {
-      return;
-    }
+    toast('¿Estás seguro de que deseas eliminar este análisis?', {
+      description: 'Esta acción no se puede deshacer.',
+      icon: <AlertCircle className="w-5 h-5 text-red-500" />,
+      action: {
+        label: 'Eliminar',
+        onClick: async () => {
+          try {
 
-    try {
-      await axios.delete(`/api/history/${id}`);
-      fetchHistory();
-      toast.success("Análisis eliminado correctamente");
-    } catch (err) {
-      console.error("Error deleting history:", err);
-      toast.error("No se pudo eliminar el historial. Por favor intenta de nuevo.");
-    }
+            await axios.delete(`/api/history/${id}`);
+            fetchHistory();
+            toast.success("Análisis eliminado correctamente");
+          } catch (err) {
+            console.error("Error deleting history:", err);
+            toast.error("No se pudo eliminar el historial. Por favor intenta de nuevo.");
+          }
+        }
+      },
+      cancel: {
+        label: 'Cancelar',
+        onClick: () => { }
+      }
+    });
   };
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-emerald-500/30">
-      <Toaster theme="dark" position="bottom-right" />
+      <Toaster theme="dark" position="top-center" />
       {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -85,7 +95,7 @@ export default function App() {
             </div>
             <h1 className="text-xl font-bold tracking-tight">SkinAnalysis <span className="text-emerald-500">Pro</span></h1>
           </div>
-          
+
           <nav className="flex gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
             <button
               onClick={() => setView('camera')}
@@ -118,7 +128,7 @@ export default function App() {
               <div className="text-center max-w-2xl mx-auto">
                 <h2 className="text-3xl font-bold text-white mb-4">Analiza tu piel en segundos</h2>
                 <p className="text-zinc-400">
-                  Captura una foto o sube una imagen de tu rostro. Nuestra IA analizará 
+                  Captura una foto o sube una imagen de tu rostro. Nuestra IA analizará
                   múltiples parámetros para darte un reporte detallado.
                 </p>
               </div>
@@ -126,22 +136,20 @@ export default function App() {
               <div className="flex justify-center gap-4">
                 <button
                   onClick={() => setInputMethod('camera')}
-                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${
-                    inputMethod === 'camera' 
-                      ? 'bg-emerald-500 text-black border-emerald-500 shadow-lg shadow-emerald-500/20' 
-                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                  }`}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${inputMethod === 'camera'
+                    ? 'bg-emerald-500 text-black border-emerald-500 shadow-lg shadow-emerald-500/20'
+                    : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                    }`}
                 >
                   <CameraIcon className="w-4 h-4" />
                   Usar Cámara
                 </button>
                 <button
                   onClick={() => setInputMethod('upload')}
-                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${
-                    inputMethod === 'upload' 
-                      ? 'bg-emerald-500 text-black border-emerald-500 shadow-lg shadow-emerald-500/20' 
-                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
-                  }`}
+                  className={`px-6 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${inputMethod === 'upload'
+                    ? 'bg-emerald-500 text-black border-emerald-500 shadow-lg shadow-emerald-500/20'
+                    : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                    }`}
                 >
                   <Upload className="w-4 h-4" />
                   Subir Imagen

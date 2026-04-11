@@ -3,6 +3,7 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import multer from "multer";
 import axios from "axios";
+
 import { Sequelize, DataTypes } from "sequelize";
 import dotenv from "dotenv";
 import fs from "fs";
@@ -195,7 +196,7 @@ async function startServer() {
       const appUrl = process.env.APP_URL || "http://localhost:3000";
       const cleanAppUrl = appUrl.replace(/\/$/, "");
       const publicImageUrl = `${cleanAppUrl}/uploads/${req.file.filename}`;
-      
+
       console.log(`[analyze] Public Image URL for API: ${publicImageUrl}`);
 
       // 2. Start Task (POST)
@@ -235,7 +236,7 @@ async function startServer() {
             imageUrl: `/uploads/${req.file.filename}`,
             rawResponse: JSON.stringify(err.response.data)
           });
-          
+
           const jsonRes = savedAnalysis.toJSON();
           jsonRes.masks = {};
           return res.json(jsonRes);
@@ -260,27 +261,27 @@ async function startServer() {
 
       // 3. Map Results
       const rList = results?.output || [];
-      
+
       const rObj: Record<string, any> = {};
       const masksObj: Record<string, string> = {};
-      
+
       console.log("[analyze] Descargando y convirtiendo capas/masks a Base64...");
       // Convert to for...of to allow await inside the loop
       for (const item of rList) {
         rObj[item.type] = item;
         if (item.mask_urls && item.mask_urls.length > 0) {
-           const maskUrl = item.mask_urls[0];
-           try {
-             // Download the mask image
-             const imgRes = await axios.get(maskUrl, { responseType: 'arraybuffer' });
-             const contentType = imgRes.headers['content-type'] || 'image/png';
-             const base64Data = Buffer.from(imgRes.data, 'binary').toString('base64');
-             masksObj[item.type] = `data:${contentType};base64,${base64Data}`;
-           } catch (e: any) {
-             console.error(`[analyze] No se pudo descargar la capa para ${item.type}: ${e.message}`);
-             // Si falla la descarga, guardamos la URL como fallback temporal
-             masksObj[item.type] = maskUrl;
-           }
+          const maskUrl = item.mask_urls[0];
+          try {
+            // Download the mask image
+            const imgRes = await axios.get(maskUrl, { responseType: 'arraybuffer' });
+            const contentType = imgRes.headers['content-type'] || 'image/png';
+            const base64Data = Buffer.from(imgRes.data, 'binary').toString('base64');
+            masksObj[item.type] = `data:${contentType};base64,${base64Data}`;
+          } catch (e: any) {
+            console.error(`[analyze] No se pudo descargar la capa para ${item.type}: ${e.message}`);
+            // Si falla la descarga, guardamos la URL como fallback temporal
+            masksObj[item.type] = maskUrl;
+          }
         }
       }
 
@@ -288,7 +289,7 @@ async function startServer() {
       const getVal = (obj: any) => obj?.ui_score ?? obj?.score ?? obj?.value ?? 0;
 
       const analysisData = {
-        skinScore: getVal(rObj['all']) || 85, 
+        skinScore: getVal(rObj['all']) || 85,
         skinAge: getVal(rObj['skin_age']) || 25,
         skinType: rObj['skin_type']?.skin_type || "Unknown",
         spots: getVal(rObj['age_spot']),
@@ -382,11 +383,22 @@ async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     try {
       console.log(">>> [startServer] Starting Vite in middleware mode...");
+      const keyPath = path.join(process.cwd(), 'server.key');
+      const certPath = path.join(process.cwd(), 'server.cert');
+      
+      const viteServerConfig: any = {
+        middlewareMode: true
+      };
+      
+      if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+        viteServerConfig.https = {
+          key: fs.readFileSync(keyPath),
+          cert: fs.readFileSync(certPath)
+        };
+      }
+
       const vite = await createViteServer({
-        server: {
-          middlewareMode: true,
-          hmr: false
-        },
+        server: viteServerConfig,
         appType: "spa",
       });
       app.use(vite.middlewares);

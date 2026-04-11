@@ -27,11 +27,11 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
 
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'user', 
+        video: {
+          facingMode: 'user',
           aspectRatio: { ideal: 4 / 3 },
-          width: { ideal: 1024 }, 
-          height: { ideal: 768 } 
+          width: { ideal: 1024 },
+          height: { ideal: 768 }
         },
         audio: false
       });
