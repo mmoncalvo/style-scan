@@ -39,7 +39,7 @@ export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete })
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div className="text-emerald-400 font-bold">{Math.round(item.skinScore * 100) / 100}</div>
+                <div className="text-emerald-400 font-bold">{Math.round(item.skinScore)}</div>
                 <div className="text-[10px] text-zinc-500 uppercase tracking-tighter">Score</div>
               </div>
               <button

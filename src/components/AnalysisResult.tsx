@@ -68,7 +68,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result }) => {
           <div className="md:col-span-1 space-y-4">
             <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700/50 text-center">
               <div className="text-sm text-zinc-400 uppercase tracking-wider mb-1">Puntaje de Piel</div>
-              <div className="text-5xl font-bold text-white mb-2">{Math.round(result.skinScore * 100) / 100}</div>
+              <div className="text-5xl font-bold text-white mb-2">{Math.round(result.skinScore)}</div>
               <div className="w-full bg-zinc-700 h-2 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
