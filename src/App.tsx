@@ -8,6 +8,7 @@ import { Sparkles, History as HistoryIcon, Camera as CameraIcon, AlertCircle, Up
 import { motion, AnimatePresence } from 'motion/react';
 import { Toaster, toast } from 'sonner';
 import axios from 'axios';
+import logo from "./logo.png";
 
 export default function App() {
   const [currentResult, setCurrentResult] = useState<SkinAnalysis | null>(null);
@@ -20,6 +21,7 @@ export default function App() {
     try {
       const response = await axios.get('/api/history');
       setHistory(response.data);
+      console.log("🚀 ~ fetchHistory ~ response.data:", response.data)
     } catch (err) {
       console.error("Error fetching history:", err);
     }
@@ -89,11 +91,9 @@ export default function App() {
       {/* Header */}
       <header className="border-b border-zinc-800 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-black" />
-            </div>
-            <h1 className="text-xl font-bold tracking-tight">SkinAnalysis <span className="text-emerald-500">Pro</span></h1>
+          <div className="flex items-center gap-2 space-x-2">
+            <img src={logo} alt="logo" width={30} height={30} />
+            <h1 className="text-2xl font-regular">Style<span className="text-emerald-500">Scan</span></h1>
           </div>
 
           <nav className="flex gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">

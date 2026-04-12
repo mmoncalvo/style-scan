@@ -1,0 +1,442 @@
+[
+  {
+    "id": "prod_spots_1",
+    "target": "spots",
+    "title": "Sérum Aclarador Intensivo Vitamin C",
+    "description": "Fórmula avanzada con Vitamina C pura y ácido ferúlico que reduce visiblemente la aparición de manchas oscuras y unifica el tono.",
+    "price": 38.5,
+    "image": "/data/images/prod_spots_1.jpg"
+  },
+  {
+    "id": "prod_spots_2",
+    "target": "spots",
+    "title": "Crema Correctora Despigmentante Noche",
+    "description": "Tratamiento nocturno nutritivo diseñado para actuar sobre la hiperpigmentación y marcas persistentes.",
+    "price": 45,
+    "image": "/data/images/prod_spots_2.jpg"
+  },
+  {
+    "id": "prod_spots_3",
+    "target": "spots",
+    "title": "Peeling AHA Ácido Glicólico 10%",
+    "description": "Exfoliante químico suave que renueva las capas superficiales de la piel, disminuyendo progresivamente las manchas.",
+    "price": 24.9,
+    "image": "/data/images/prod_spots_3.jpg"
+  },
+  {
+    "id": "prod_spots_4",
+    "target": "spots",
+    "title": "Tónico Iluminador Anti-Manchas",
+    "description": "Loción equilibrante con extracto de regaliz y arbutina que prepara la piel y potencia la luminosidad natural.",
+    "price": 18,
+    "image": "/data/images/prod_spots_4.jpg"
+  },
+  {
+    "id": "prod_spots_5",
+    "target": "spots",
+    "title": "Pantalla Solar Prevención Manchas SPF 50+",
+    "description": "Protector solar de amplio espectro imprescindible para evitar el oscurecimiento de las manchas existentes y prevenir nuevas.",
+    "price": 32,
+    "image": "/data/images/prod_spots_5.jpg"
+  },
+  {
+    "id": "prod_wrinkles_1",
+    "target": "wrinkles",
+    "title": "Crema Antiarrugas Retinol Puro 0.3%",
+    "description": "Fórmula experta de uso nocturno que disminuye arrugas y líneas finas estimulando la regeneración celular.",
+    "price": 55,
+    "image": "/data/images/prod_wrinkles_1.jpg"
+  },
+  {
+    "id": "prod_wrinkles_2",
+    "target": "wrinkles",
+    "title": "Sérum Rellenador Ácido Hialurónico 2%",
+    "description": "Booster super concentrado que devuelve el volumen a la piel deshidratada, alisando las pequeñas arrugas.",
+    "price": 29.9,
+    "image": "/data/images/prod_wrinkles_2.jpg"
+  },
+  {
+    "id": "prod_wrinkles_3",
+    "target": "wrinkles",
+    "title": "Contorno de Ojos Efecto Lifting",
+    "description": "Tratamiento con péptidos tensores enfocado a alisar las 'patas de gallo' y combatir la falta de firmeza.",
+    "price": 42.5,
+    "image": "/data/images/prod_wrinkles_3.jpg"
+  },
+  {
+    "id": "prod_wrinkles_4",
+    "target": "wrinkles",
+    "title": "Mascarilla Tensora de Colágeno",
+    "description": "Shock hidratante y afirmante ideal antes de eventos. Devuelve elasticidad profunda a la piel.",
+    "price": 12,
+    "image": "/data/images/prod_wrinkles_4.jpg"
+  },
+  {
+    "id": "prod_wrinkles_5",
+    "target": "wrinkles",
+    "title": "Ampollas Reafirmantes Anti-Edad",
+    "description": "Tratamiento intensivo de 7 días. Suero flash con antioxidantes que difuminan imperfecciones y reafirman al instante.",
+    "price": 35,
+    "image": "/data/images/prod_wrinkles_5.jpg"
+  },
+  {
+    "id": "prod_texture_1",
+    "target": "texture",
+    "title": "Exfoliante Suave Enzimático",
+    "description": "Polvo limpiador a base de enzimas vegetales de papaya. Exfolia sin rozar y devuelve la suavidad al tacto.",
+    "price": 26.5,
+    "image": "/data/images/prod_texture_1.jpg"
+  },
+  {
+    "id": "prod_texture_2",
+    "target": "texture",
+    "title": "Sérum Renovador Textura Perfecta",
+    "description": "Contiene ácido láctico (AHA) que ayuda a eliminar la textura rugosa, aportando un acabado liso y sedoso.",
+    "price": 31,
+    "image": "/data/images/prod_texture_2.jpg"
+  },
+  {
+    "id": "prod_texture_3",
+    "target": "texture",
+    "title": "Crema Pulidora Microdermoabrasión",
+    "description": "Tratamiento exfoliante físico con micro-cristales para minimizar la apariencia irregular de la piel.",
+    "price": 39,
+    "image": "/data/images/prod_texture_3.jpg"
+  },
+  {
+    "id": "prod_texture_4",
+    "target": "texture",
+    "title": "Tónico Afina Poros y Textura",
+    "description": "Tónico diario de uso nocturno para eliminar las células muertas atrapadas en la superficie de la piel.",
+    "price": 22,
+    "image": "/data/images/prod_texture_4.jpg"
+  },
+  {
+    "id": "prod_texture_5",
+    "target": "texture",
+    "title": "Gel Limpiador Suavizante",
+    "description": "Mousse limpiadora enriquecida con aminoácidos suaves para equilibrar la capa externa cutánea.",
+    "price": 19.5,
+    "image": "/data/images/prod_texture_5.jpg"
+  },
+  {
+    "id": "prod_darkCircles_1",
+    "target": "darkCircles",
+    "title": "Contorno de Ojos Iluminador de Cafeína",
+    "description": "Fórmula ligera con alta concentración de cafeína para mitigar los halos oscuros bajo los ojos rápidamente.",
+    "price": 26,
+    "image": "/data/images/prod_darkCircles_1.jpg"
+  },
+  {
+    "id": "prod_darkCircles_2",
+    "target": "darkCircles",
+    "title": "Parches de Hidrogel Anti-Ojeras",
+    "description": "Mascarillas frías de hidrogel infundidas con oro y colágeno. Ideal para reducir signos vitales de fatiga.",
+    "price": 15,
+    "image": "/data/images/prod_darkCircles_2.jpg"
+  },
+  {
+    "id": "prod_darkCircles_3",
+    "target": "darkCircles",
+    "title": "Sérum de Ojos Vitamina K",
+    "description": "Reduce la pigmentación violácea oscura de las ojeras crónicas o hereditarias fortaleciendo los capilares.",
+    "price": 34,
+    "image": "/data/images/prod_darkCircles_3.jpg"
+  },
+  {
+    "id": "prod_darkCircles_4",
+    "target": "darkCircles",
+    "title": "Crema Despigmentante Contorno de Ojos",
+    "description": "Específico para iluminar ojeras pigmentadas marrones con ingredientes inhibidores de melanina.",
+    "price": 45.5,
+    "image": "/data/images/prod_darkCircles_4.jpg"
+  },
+  {
+    "id": "prod_darkCircles_5",
+    "target": "darkCircles",
+    "title": "Corrector Treatment Roll-on",
+    "description": "Descongestiona gracias a su esfera metálica y oculta la coloración oscura para uso diario (con un leve tinte amarillo).",
+    "price": 28.5,
+    "image": "/data/images/prod_darkCircles_5.jpg"
+  },
+  {
+    "id": "prod_pores_1",
+    "target": "pores",
+    "title": "Tónico Astringente Minimiza Poros",
+    "description": "Con extracto de hamamelis y BHA para limpiar profundamente la suciedad residual y encoger el poro dilatado.",
+    "price": 21,
+    "image": "/data/images/prod_pores_1.jpg"
+  },
+  {
+    "id": "prod_pores_2",
+    "target": "pores",
+    "title": "Sérum Niacinamida 10% + Zinc 1%",
+    "description": "La combinación estrella para regular la producción de sebo y disimular poros enormemente visibles.",
+    "price": 16,
+    "image": "/data/images/prod_pores_2.jpg"
+  },
+  {
+    "id": "prod_pores_3",
+    "target": "pores",
+    "title": "Mascarilla de Arcilla Purificante",
+    "description": "Arcilla volcánica verde que extrae impurezas, puntos negros y libera a la piel de sebo atrapado.",
+    "price": 18.5,
+    "image": "/data/images/prod_pores_3.jpg"
+  },
+  {
+    "id": "prod_pores_4",
+    "target": "pores",
+    "title": "Gel Limpiador Profundo de Poros",
+    "description": "Limpiador diario sin aceites que previenque que los poros se obstruyan a lo largo del tiempo.",
+    "price": 19.9,
+    "image": "/data/images/prod_pores_4.jpg"
+  },
+  {
+    "id": "prod_pores_5",
+    "target": "pores",
+    "title": "Pre-base Matificante Cierra Poros",
+    "description": "Primer preparador de rostro libre de siliconas pesadas que sella los poros para un acabado difuminado instintáneo.",
+    "price": 29,
+    "image": "/data/images/prod_pores_5.jpg"
+  },
+  {
+    "id": "prod_redness_1",
+    "target": "redness",
+    "title": "Sérum Calmante Centella Asiática (Cica)",
+    "description": "Específicamente formulado para piel irritada o reactiva. Reduce significativamente rojeces temporales.",
+    "price": 32,
+    "image": "/data/images/prod_redness_1.jpg"
+  },
+  {
+    "id": "prod_redness_2",
+    "target": "redness",
+    "title": "Crema Reparadora Anti-Rojeces",
+    "description": "Crema densa que enfría la piel y refuerza la barrera natural, bloqueando ingredientes agresores ambientales.",
+    "price": 38.5,
+    "image": "/data/images/prod_redness_2.jpg"
+  },
+  {
+    "id": "prod_redness_3",
+    "target": "redness",
+    "title": "Bruma Refrescante Aloe y Manzanilla",
+    "description": "Spray hidratante para aplicar durante el día: rebaja la temperatura del cutis y reconforta instantáneamente.",
+    "price": 15,
+    "image": "/data/images/prod_redness_3.jpg"
+  },
+  {
+    "id": "prod_redness_4",
+    "target": "redness",
+    "title": "Mascarilla Alivio Inmediato Piel Sensible",
+    "description": "Gel mascarilla sin perfumes ni alcohol que reduce la hiper-rosácea provocado por estrés o clima.",
+    "price": 25,
+    "image": "/data/images/prod_redness_4.jpg"
+  },
+  {
+    "id": "prod_redness_5",
+    "target": "redness",
+    "title": "Bálsamo Regenerador de Barrera",
+    "description": "Ungüento intensivo enriquecido con ceramidas para fortalecer una barrera cutánea debilitada que se enrojece fácilmente.",
+    "price": 40,
+    "image": "/data/images/prod_redness_5.jpg"
+  },
+  {
+    "id": "prod_oiliness_1",
+    "target": "oiliness",
+    "title": "Gel Matificante Control Brillos",
+    "description": "Hidratante ultra-ligera en base de agua que deja la piel completamente mate y absorbe excedentes de grasa.",
+    "price": 24.5,
+    "image": "/data/images/prod_oiliness_1.jpg"
+  },
+  {
+    "id": "prod_oiliness_2",
+    "target": "oiliness",
+    "title": "Tónico Equilibrante Piel Grasa",
+    "description": "Regula el pH cutáneo y reduce drásticamente la oleosidad en la zona T (frente, nariz, mentón).",
+    "price": 18,
+    "image": "/data/images/prod_oiliness_2.jpg"
+  },
+  {
+    "id": "prod_oiliness_3",
+    "target": "oiliness",
+    "title": "Limpiador Espuma Seborregulador",
+    "description": "Produce una espuma rica que emulsiona aceites e impurezas dejándote sensación duradera de limpieza.",
+    "price": 22,
+    "image": "/data/images/prod_oiliness_3.jpg"
+  },
+  {
+    "id": "prod_oiliness_4",
+    "target": "oiliness",
+    "title": "Mascarilla Carbón Activado Detox",
+    "description": "Potente esponja absorbente para el rostro. Retira toxinas y grasas de la superficie instantáneamente.",
+    "price": 21,
+    "image": "/data/images/prod_oiliness_4.jpg"
+  },
+  {
+    "id": "prod_oiliness_5",
+    "target": "oiliness",
+    "title": "Papeles Absorbentes Control de Brillo (Blotting Paper)",
+    "description": "Laminas transportables de uso sobre maquillaje para absorber grasa instantáneamente durante el día sin alterar cosméticos.",
+    "price": 8,
+    "image": "/data/images/prod_oiliness_5.jpg"
+  },
+  {
+    "id": "prod_moisture_1",
+    "target": "moisture",
+    "title": "Crema Ultra Hidratante Retención 48h",
+    "description": "Textura rica con 3 tipos de ácidos hialurónicos. Sella la humedad previniendo descamación.",
+    "price": 36,
+    "image": "/data/images/prod_moisture_1.jpg"
+  },
+  {
+    "id": "prod_moisture_2",
+    "target": "moisture",
+    "title": "Sérum Booster de Hidratación Profunda",
+    "description": "Refuerzo concentrado para aplicar antes de la crema que duplica la retención de agua en pieles deshidratadas.",
+    "price": 29.5,
+    "image": "/data/images/prod_moisture_2.jpg"
+  },
+  {
+    "id": "prod_moisture_3",
+    "target": "moisture",
+    "title": "Mascarilla Nocturna Aqua-Gel",
+    "description": "Sleeping mask (mascara nocturna) ligera que baña la piel en humedad retenida hasta que despiertas.",
+    "price": 28,
+    "image": "/data/images/prod_moisture_3.jpg"
+  },
+  {
+    "id": "prod_moisture_4",
+    "target": "moisture",
+    "title": "Aceite Facial Súper Nutriente",
+    "description": "Aceite ligero no comedogénico a base de escualano vegetal para pieles secas o tirantes.",
+    "price": 42,
+    "image": "/data/images/prod_moisture_4.jpg"
+  },
+  {
+    "id": "prod_moisture_5",
+    "target": "moisture",
+    "title": "Limpiador Bálsamo Desmaquillante Nutritivo",
+    "description": "Limpia la suciedad y maquillaje agresivo de tu cara hidratando al mismo tiempo, sin efecto tirante posterior.",
+    "price": 25.5,
+    "image": "/data/images/prod_moisture_5.jpg"
+  },
+  {
+    "id": "prod_eyebag_1",
+    "target": "eyebag",
+    "title": "Gel Descongestionante Bolsas Oculares",
+    "description": "Tratamiento intensivo activado por temperatura. Aplicar frío disminuye la hinchazón severa gradualmente.",
+    "price": 31,
+    "image": "/data/images/prod_eyebag_1.jpg"
+  },
+  {
+    "id": "prod_eyebag_2",
+    "target": "eyebag",
+    "title": "Parches Efecto Hielo para Ojos",
+    "description": "Refrescantes almohadillas reusables impregnadas de gel que activan la circulación local para drenar bolsas.",
+    "price": 14.5,
+    "image": "/data/images/prod_eyebag_2.jpg"
+  },
+  {
+    "id": "prod_eyebag_3",
+    "target": "eyebag",
+    "title": "Contorno de Ojos con Rodillo Masajeador",
+    "description": "Combina una crema drenante botánica con un cabezal de rodillo de aluminio frío, atacando la inflamación directamente.",
+    "price": 34,
+    "image": "/data/images/prod_eyebag_3.jpg"
+  },
+  {
+    "id": "prod_eyebag_4",
+    "target": "eyebag",
+    "title": "Sérum Drenante Té Verde",
+    "description": "Poderoso elíxir descongestionante. Los antioxidantes disminuyen la retención de líquidos faciales focalizados en ojeras.",
+    "price": 27,
+    "image": "/data/images/prod_eyebag_4.jpg"
+  },
+  {
+    "id": "prod_eyebag_5",
+    "target": "eyebag",
+    "title": "Mascarilla de Noche Revitalizante Área Ojos",
+    "description": "Una crema densa en gel diseñada para prevenir la hinchazón producida al dormir de lado o plano.",
+    "price": 29.9,
+    "image": "/data/images/prod_eyebag_5.jpg"
+  },
+  {
+    "id": "prod_droopyEyelid_1",
+    "target": "droopyEyelid",
+    "title": "Crema Elevadora Efecto Párpado Firme",
+    "description": "El primer producto formulado para tratar específicamente la flacidez de la piel delgada superior e inferior del ojo.",
+    "price": 48,
+    "image": "/data/images/prod_droopyEyelid_1.jpg"
+  },
+  {
+    "id": "prod_droopyEyelid_2",
+    "target": "droopyEyelid",
+    "title": "Sérum Tensor Párpado Superior Flash",
+    "description": "Crea una película invisible altamente tensora que levanta inmediatamente la caída suave del pliegue durante horas.",
+    "price": 42,
+    "image": "/data/images/prod_droopyEyelid_2.jpg"
+  },
+  {
+    "id": "prod_droopyEyelid_3",
+    "target": "droopyEyelid",
+    "title": "Contorno Reafirmante Global Ojos",
+    "description": "Combate la fatiga peri-ocular, recupera la matriz de colágeno devolviéndole soporte a los párpados.",
+    "price": 55,
+    "image": "/data/images/prod_droopyEyelid_3.jpg"
+  },
+  {
+    "id": "prod_droopyEyelid_4",
+    "target": "droopyEyelid",
+    "title": "Adhesivos Tensores Invisibles (Lid Tapes)",
+    "description": "Tiras de soporte transparentes que corrigen al instante los parpados caídos sin cirugía. Especial para debajo del maquillaje.",
+    "price": 12,
+    "image": "/data/images/prod_droopyEyelid_4.jpg"
+  },
+  {
+    "id": "prod_droopyEyelid_5",
+    "target": "droopyEyelid",
+    "title": "Gel Reafirmante Extra-Fuerte",
+    "description": "Contiene péptidos con perfil reafirmante de lenta absorción para tensar mecánicamente las estructuras tisulares caídas al contacto.",
+    "price": 38.5,
+    "image": "/data/images/prod_droopyEyelid_5.jpg"
+  },
+  {
+    "id": "prod_acne_1",
+    "target": "acne",
+    "title": "Gel Limpiador Ácido Salicílico 2%",
+    "description": "El limpiador indispensable y recomendado globalmente para pieles que sufren o previenen imperfecciones tipo comedones.",
+    "price": 18,
+    "image": "/data/images/prod_acne_1.jpg"
+  },
+  {
+    "id": "prod_acne_2",
+    "target": "acne",
+    "title": "Tratamiento Focalizado SOS (Peróxido de Benzoílo)",
+    "description": "Acción hiper-rápida. Aplicar directamente en pápulas inflamadas para secarlas visiblemente en 24h.",
+    "price": 15,
+    "image": "/data/images/prod_acne_2.jpg"
+  },
+  {
+    "id": "prod_acne_3",
+    "target": "acne",
+    "title": "Tónico Exfoliante Piel Tendencia Acnéica",
+    "description": "Destapa los poros profundamente sin frotar. Contiene extracto de árbol de té purificante.",
+    "price": 19.5,
+    "image": "/data/images/prod_acne_3.jpg"
+  },
+  {
+    "id": "prod_acne_4",
+    "target": "acne",
+    "title": "Parches Hidrocoloides para Granos",
+    "description": "Absorben instantáneamente la infección y calman rojeces, evitando que te toques y manches la cara (36 unidades).",
+    "price": 7.5,
+    "image": "/data/images/prod_acne_4.jpg"
+  },
+  {
+    "id": "prod_acne_5",
+    "target": "acne",
+    "title": "Crema Ligera Reparadora Cicatrices Acné",
+    "description": "A diferencia de hidratantes pesadas, su fórmula aqua-gel sin aceites estimula una cicatrización veloz y lisa, calmando dolor y comezón.",
+    "price": 28,
+    "image": "/data/images/prod_acne_5.jpg"
+  }
+]
