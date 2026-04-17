@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SkinAnalysis } from '../types';
 import { motion } from 'motion/react';
-import { Activity, User, Droplets, Sparkles, AlertCircle, ShoppingBag, X } from 'lucide-react';
+import { Activity, User, Droplets, Sparkles, AlertCircle, ShoppingBag, X, Clock } from 'lucide-react';
 import productsData from '../../data/products.json';
 
 interface AnalysisResultProps {
@@ -41,195 +41,186 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="overflow-hidden shadow-xl"
+      className="max-w-7xl mx-auto"
     >
-
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl">
-        {result.isMock && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 p-4 flex items-center gap-3 text-amber-500">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p className="text-sm font-medium">
-              ¡Aviso! Se han agotado los créditos de la API. Estos son resultados de prueba (Mock).
-            </p>
-          </div>
-        )}
-        <div className="p-6 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Sparkles className="w-6 h-6 text-emerald-400" />
-            <h2 className="text-xl font-semibold text-white">Resultado del Análisis</h2>
-          </div>
-          <div className="text-zinc-500 text-sm font-mono">
-            {new Date(result.createdAt).toLocaleString()}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
-          {/* Main Stats */}
-          <div className="md:col-span-1 space-y-4">
-            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700/50 text-center">
-              <div className="text-sm text-zinc-400 uppercase tracking-wider mb-1">Puntaje de Piel</div>
-              <div className="text-5xl font-bold text-white mb-2">{Math.round(result.skinScore)}</div>
-              <div className="w-full bg-zinc-700 h-2 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${result.skinScore}%` }}
-                  className="h-full bg-emerald-500"
-                />
+      <div className="flex flex-col lg:flex-row gap-8">
+        
+        {/* LEFT COLUMN */}
+        <div className="w-full lg:w-[35%] flex flex-col gap-6">
+          {/* Main Score Card */}
+          <div className="bg-[#F3F4F6] rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center">
+            {/* Dark Teal Area */}
+            <div className="bg-[#0B5C66] w-full rounded-2xl flex flex-col items-center justify-center py-10 shadow-md">
+              <div className="w-40 h-40 bg-white rounded-full flex flex-col items-center justify-center shadow-lg relative">
+                 <svg className="absolute inset-0 w-full h-full -rotate-90">
+                    <circle cx="80" cy="80" r="76" stroke="#E5E7EB" strokeWidth="8" fill="none" />
+                    <circle cx="80" cy="80" r="76" stroke="#0B5C66" strokeWidth="8" fill="none" strokeDasharray="477" strokeDashoffset={477 - (477 * result.skinScore) / 100} />
+                 </svg>
+                 <span className="text-5xl font-black text-slate-900 leading-none">{Math.round(result.skinScore)}<span className="text-xl">.{(result.skinScore % 1 * 10).toFixed(0)}</span></span>
+                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Skin Score</span>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700/50 text-center">
-                <User className="w-5 h-5 text-zinc-400 mx-auto mb-2" />
-                <div className="text-xs text-zinc-400 uppercase tracking-wider">Edad de Piel</div>
-                <div className="text-2xl font-bold text-white">{result.skinAge}</div>
-              </div>
-              <div className="bg-zinc-800/50 p-4 rounded-xl border border-zinc-700/50 text-center">
-                <Activity className="w-5 h-5 text-zinc-400 mx-auto mb-2" />
-                <div className="text-xs text-zinc-400 uppercase tracking-wider">Tipo de Piel</div>
-                <div className="text-lg font-bold text-white truncate">{result.skinType}</div>
-              </div>
+            
+            <div className="mt-8 text-center px-2">
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Estado General</h3>
+              <p className="text-slate-500 text-sm leading-relaxed mb-6">
+                Su piel muestra una salud general estable, aunque se detectan áreas de mejora en texturas según los biomarcadores. Edad biológica estimada: <span className="font-semibold text-slate-700">{result.skinAge} años</span>.
+              </p>
+              <button className="w-full py-4 px-6 bg-[#0B5C66] hover:bg-[#094A52] text-white text-sm font-bold tracking-widest uppercase rounded-xl transition-colors shadow-md">
+                Descargar Reporte PDF
+              </button>
             </div>
+          </div>
 
-            <div className="relative rounded-xl overflow-hidden border border-zinc-700 aspect-square bg-black">
-              {/* The resized image mask if available, otherwise fallback to the upload snapshot */}
-              <img
+          {/* Image Card */}
+          <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-md relative aspect-square group">
+            <img
                 src={result.masks?.['resize_image'] || result.imageUrl}
                 alt="Analyzed Base"
-                className="absolute inset-0 w-full h-full object-cover opacity-80"
-              />
-              {activeLayer && result.masks?.[activeLayer] && (
-                <img
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+            />
+            {activeLayer && result.masks?.[activeLayer] && (
+               <img
                   src={result.masks[activeLayer]}
                   alt={`${activeLayer} Mask`}
                   className="absolute inset-0 w-full h-full object-cover mix-blend-normal opacity-90 transition-opacity duration-300"
-                />
-              )}
+               />
+            )}
+            {/* Timestamp Badge */}
+            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-2 text-white bg-black/40 backdrop-blur-md px-3 py-2 rounded-lg text-xs font-bold tracking-wide">
+              <Clock className="w-4 h-4" />
+              ESCANEO HACE 2 MINUTOS
             </div>
           </div>
+        </div>
 
+        {/* RIGHT COLUMN */}
+        <div className="w-full lg:w-[65%] flex flex-col gap-10">
+          
           {/* Detailed Metrics */}
-          <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {metrics.map((metric, idx) => (
-              <motion.div
-                key={metric.label}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.05 }}
-                onClick={() => setActiveLayer(activeLayer === metric.type ? null : metric.type)}
-                className={`cursor-pointer p-4 rounded-xl border transition-all duration-200 ${activeLayer === metric.type
-                  ? 'bg-zinc-800 border-zinc-500 shadow-md transform scale-105'
-                  : 'bg-zinc-800/30 border-zinc-700/30 hover:bg-zinc-800/50'
-                  }`}
-              >
-                <metric.icon className={`w-5 h-5 ${metric.color} mb-2`} />
-                <div className="text-xs text-zinc-500 uppercase tracking-wider font-medium">{metric.label}</div>
-                <div className="text-xl font-bold text-white">{metric.value}</div>
-              </motion.div>
-            ))}
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+             <div className="mb-8 border-b-2 border-gray-100 pb-4 inline-block">
+               <h2 className="text-2xl font-bold text-[#0B5C66]">Métricas Detalladas</h2>
+               <p className="text-slate-500 text-sm mt-1">Análisis multiespectral mediante IA avanzada.</p>
+             </div>
+             
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-10">
+                {metrics.map((metric, idx) => (
+                   <motion.div
+                     key={metric.label}
+                     initial={{ opacity: 0, scale: 0.9 }}
+                     animate={{ opacity: 1, scale: 1 }}
+                     transition={{ delay: idx * 0.05 }}
+                     onClick={() => setActiveLayer(activeLayer === metric.type ? null : metric.type)}
+                     className={`cursor-pointer flex flex-col items-center text-center transition-all duration-200 group ${activeLayer === metric.type ? '' : ''}`}
+                   >
+                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${activeLayer === metric.type ? 'bg-[#0B5C66] shadow-md' : 'bg-teal-50 group-hover:bg-teal-100'}`}>
+                       <metric.icon className={`w-5 h-5 ${activeLayer === metric.type ? 'text-white' : 'text-[#0B5C66]'}`} />
+                     </div>
+                     <div className="text-xl font-black text-slate-800 mb-1">{typeof metric.value === 'number' && metric.value > 10 ? `${metric.value}%` : metric.value}</div>
+                     <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-tight">{metric.label}</div>
+                   </motion.div>
+                ))}
+             </div>
+          </div>
+
+          {/* Recommended Products */}
+          <div className="bg-transparent">
+             <div className="flex items-center gap-4 mb-6">
+               <h2 className="text-2xl font-bold text-slate-900">Recomendaciones Curadas</h2>
+               <span className="bg-teal-100 text-[#0B5C66] text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase">Para Ti</span>
+             </div>
+             
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+               {recommendedProducts.slice(0, 6).map(product => {
+                  const relatedMetric = metrics.find(m => m.targetKey === product.target);
+                  return (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100 flex flex-col cursor-pointer group"
+                      onClick={() => setSelectedProduct(product)}
+                    >
+                      <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden flex items-center justify-center p-4">
+                        <img src={product.image} alt={product.title} className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-500" />
+                        <div className="absolute top-3 right-3 bg-white w-8 h-8 rounded-full shadow-sm flex items-center justify-center">
+                          {relatedMetric ? <relatedMetric.icon className="w-4 h-4 text-[#0B5C66]" /> : <ShoppingBag className="w-4 h-4 text-[#0B5C66]" />}
+                        </div>
+                      </div>
+                      <div className="p-5 flex flex-col flex-grow">
+                        <div className="text-[10px] font-bold text-[#0B5C66] tracking-widest uppercase mb-2">{relatedMetric?.label || product.target}</div>
+                        <h4 className="text-sm font-bold text-slate-900 leading-tight mb-4 flex-grow">{product.title}</h4>
+                        
+                        <div className="flex items-center justify-between mt-auto">
+                          <span className="font-bold text-slate-900">${product.price.toFixed(2)}</span>
+                          <button className="w-8 h-8 rounded-full bg-[#0B5C66] text-white flex items-center justify-center shadow-md hover:bg-[#094A52] transition-colors">
+                            <span className="text-lg font-light leading-none mb-0.5">+</span>
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+               })}
+             </div>
           </div>
         </div>
       </div>
 
-      {/* RECOMENDACIONES DE PRODUCTOS */}
-      <div className="py-6 mt-12">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
-            <ShoppingBag className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-white">Recomendaciones para ti</h3>
-            <p className="text-sm text-zinc-400">Productos seleccionados específicamente basados en tu análisis</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {recommendedProducts.map(product => {
-            const relatedMetric = metrics.find(m => m.targetKey === product.target);
-            return (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden hover:border-zinc-700 transition-colors group flex flex-col h-full"
-              >
-                <div className="aspect-[4/3] bg-zinc-800 relative overflow-hidden flex-shrink-0">
-                  <img onClick={() => setSelectedProduct(product)} src={product.image} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer" />
-                  <div className="absolute top-3 left-3 bg-zinc-900/70 backdrop-blur-sm px-2.5 py-1 rounded-full border border-zinc-700/50 flex items-center gap-1.5">
-                    {relatedMetric && <relatedMetric.icon className={`w-3.5 h-3.5 ${relatedMetric.color}`} />}
-                    <span className="text-[10px] text-white font-medium uppercase tracking-wider">{relatedMetric?.label || product.target}</span>
-                    <span className="">{relatedMetric?.value}</span>
-                  </div>
-                </div>
-                <div className="flex flex-col flex-grow">
-                  <div className="p-4">
-                    <h4 className="text-sm font-bold text-white my-2 line-clamp-2 leading-tight">{product.title}</h4>
-                    <p className="text-xs text-zinc-400 line-clamp-3 mb-4 leading-relaxed flex-grow">{product.description}</p>
-                  </div>
-                  <div className="flex items-center justify-between mt-auto border-t border-zinc-800/50 bg-zinc-800/90 p-4">
-                    <span className="font-mono font-bold text-white tracking-tight">${product.price.toFixed(2)}</span>
-                    <button onClick={() => setSelectedProduct(product)} className="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-100 text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer">Ver más</button>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-
+      {/* Modal - Light Theme Adaptation */}
       {selectedProduct && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setSelectedProduct(null)}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh]"
           >
             <button
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-black/80 text-white rounded-full backdrop-blur-md transition-colors"
+              className="absolute top-4 right-4 z-10 p-2 bg-white/80 hover:bg-white text-slate-600 rounded-full backdrop-blur-md transition-colors shadow-sm"
             >
               <X className="w-5 h-5" />
             </button>
-            <div className="aspect-video bg-zinc-800 relative shrink-0 max-h-[400px]">
-              <img src={selectedProduct.image} alt={selectedProduct.title} className="w-full h-full object-cover bg-center" />
+            <div className="aspect-video bg-gray-50 relative shrink-0 max-h-[300px] flex items-center justify-center p-4">
+              <img src={selectedProduct.image} alt={selectedProduct.title} className="w-full h-full object-contain" />
             </div>
-            <div className="p-6 overflow-y-auto">
-              <div className="flex items-start justify-between gap-4 mb-4">
+            <div className="p-8 overflow-y-auto">
+              <div className="flex items-start justify-between gap-4 mb-2">
                 <div>
-                  <div className="text-xs text-emerald-400 font-medium mb-4 uppercase tracking-wider">{selectedProduct.target}</div>
-                  <h3 className="text-xl font-bold text-white leading-tight">{selectedProduct.title}</h3>
+                  <div className="text-xs text-[#0B5C66] font-bold mb-2 uppercase tracking-widest">{selectedProduct.target}</div>
+                  <h3 className="text-2xl font-black text-slate-900 leading-tight">{selectedProduct.title}</h3>
                 </div>
-                <div className="text-xl font-mono font-bold text-emerald-400 shrink-0">${selectedProduct.price.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-slate-900 shrink-0">${selectedProduct.price.toFixed(2)}</div>
               </div>
-              <p className="text-zinc-300 text-sm leading-relaxed mb-6">
+              <p className="text-slate-600 text-sm leading-relaxed my-6">
                 {selectedProduct.description}
               </p>
 
-              <div className="bg-zinc-950/50 rounded-xl p-4 border border-zinc-800/50">
+              <div className="bg-teal-50/50 rounded-2xl p-4 border border-teal-100">
                 {(() => {
                   const m = metrics.find(m => m.targetKey === selectedProduct.target);
                   if (!m) return null;
                   return (
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-zinc-900 flex items-center justify-center border border-zinc-800 shrink-0">
-                        <m.icon className={`w-5 h-5 ${m.color}`} />
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
+                        <m.icon className="w-6 h-6 text-[#0B5C66]" />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-medium text-white">{m.label}</div>
-                        <div className="text-xs text-zinc-400"><span className="text-white font-bold">{m.value}</span></div>
+                      <div className="flex flex-col">
+                         <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-0.5">{m.label}</div>
+                         <div className="text-lg font-black text-slate-900 leading-none">{m.value}</div>
                       </div>
                     </div>
                   );
                 })()}
               </div>
-              <div className="mt-6">
-                <button className="w-full py-3 border border-emerald-500 text-emerald-500 hover:bg-emerald-500/10 font-bold rounded-xl transition-colors">
+              <div className="mt-8">
+                <button className="w-full py-4 text-white bg-[#0B5C66] hover:bg-[#094A52] font-bold tracking-wide uppercase text-sm rounded-xl transition-colors shadow-lg shadow-teal-900/20">
                   Añadir al carrito
                 </button>
               </div>
@@ -237,7 +228,6 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result }) => {
           </motion.div>
         </div>
       )}
-
     </motion.div>
   );
 };
