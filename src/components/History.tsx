@@ -1,15 +1,24 @@
 import React from 'react';
 import { SkinAnalysis } from '../types';
 import { motion } from 'motion/react';
-import { Clock, ChevronRight, Trash2 } from 'lucide-react';
+import { Clock, ChevronRight, Trash2, Loader2 } from 'lucide-react';
 
 interface HistoryProps {
-  history: SkinAnalysis[];
+  history: SkinAnalysis[] | null;
   onSelect: (result: SkinAnalysis) => void;
   onDelete: (id: string) => void;
 }
 
 export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete }) => {
+  if (history === null) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-slate-400 dark:text-slate-600">
+        <Loader2 className="w-8 h-8 animate-spin mb-4" />
+        <p className="font-medium">Cargando historial...</p>
+      </div>
+    );
+  }
+
   if (history.length === 0) return null;
 
   return (

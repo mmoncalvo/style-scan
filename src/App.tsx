@@ -14,8 +14,8 @@ import axios from 'axios';
 
 export default function App() {
   const [currentResult, setCurrentResult] = useState<SkinAnalysis | null>(null);
-  const [guestHistory, setGuestHistory] = useState<SkinAnalysis[]>([]);
-  const [userHistory, setUserHistory] = useState<SkinAnalysis[]>([]);
+  const [guestHistory, setGuestHistory] = useState<SkinAnalysis[] | null>(null);
+  const [userHistory, setUserHistory] = useState<SkinAnalysis[] | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [view, setView] = useState<'camera' | 'result' | 'history' | 'login' | 'register' | 'profile'>('camera');
