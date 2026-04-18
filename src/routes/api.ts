@@ -2,9 +2,80 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import axios from 'axios';
-import { Analysis } from '../config/database.js'; // tsx resolves this seamlessly
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { Analysis, User } from '../config/database.js'; // tsx resolves this seamlessly
 
 const router = Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// Middleware to verify JWT
+const authenticate = (req: any, res: any, next: any) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+// Auth Routes
+router.post('/register', async (req: any, res: any) => {
+  try {
+    const { username, password, fullName, email } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, password: hashedPassword, fullName, email });
+    res.json({ success: true, user: { id: user.id, username: user.username } });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/login', async (req: any, res: any) => {
+  try {
+    const { username, password } = req.body;
+    const user: any = await User.findOne({ where: { username } });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ token, user: { id: user.id, username: user.username, role: user.role, fullName: user.fullName, email: user.email } });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/profile', authenticate, async (req: any, res: any) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.put('/profile', authenticate, async (req: any, res: any) => {
+  try {
+    const { fullName, email, password } = req.body;
+    const user: any = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const updates: any = { fullName, email };
+    if (password) {
+      updates.password = await bcrypt.hash(password, 10);
+    }
+
+    await user.update(updates);
+    res.json({ success: true, user });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
 
 // Multer Setup for image uploads
 const storage = multer.diskStorage({
@@ -56,6 +127,19 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
       return res.status(400).json({ error: "No image uploaded" });
     }
 
+    // Extract userId if token is present
+    let userId = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded: any = jwt.verify(token, JWT_SECRET);
+        userId = decoded.id;
+      } catch (e) {
+        // Allow anonymous analysis
+      }
+    }
+
     const apiKey = process.env.PERFECT_CORP_API_KEY;
     const baseUrl = process.env.PERFECT_CORP_API_URL || "https://yce-api-01.makeupar.com/s2s/v2.0";
     const startTaskUrl = `${baseUrl}/task/skin-analysis`;
@@ -82,6 +166,7 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
 
       const savedAnalysis = await Analysis.create({
         ...mockData,
+        userId,
         imageUrl: `/uploads/${req.file.filename}`,
         rawResponse: JSON.stringify(mockData)
       });
@@ -129,6 +214,7 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
         };
         const savedAnalysis = await Analysis.create({
           ...mockData,
+          userId,
           masks: "{}",
           isMock: true,
           imageUrl: `/uploads/${req.file.filename}`,
@@ -201,6 +287,7 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
     // Save to database
     const savedAnalysis = await Analysis.create({
       ...analysisData,
+      userId,
       masks: JSON.stringify(masksObj),
       imageUrl: `/uploads/${req.file.filename}`,
       rawResponse: JSON.stringify(results)
@@ -226,7 +313,22 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
 router.get("/history", async (req: any, res: any) => {
   try {
     console.log(">>> [api/history] Fetching analysis history...");
+
+    // Filter by userId if token is present
+    let whereClause = {};
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded: any = jwt.verify(token, JWT_SECRET);
+        whereClause = { userId: decoded.id };
+      } catch (e) {
+        // Ignore token error
+      }
+    }
+
     const history = await Analysis.findAll({
+      where: whereClause,
       order: [['createdAt', 'DESC']],
       limit: 10
     });

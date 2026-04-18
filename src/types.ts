@@ -1,3 +1,11 @@
+export interface User {
+  id: string;
+  username: string;
+  role: string;
+  fullName?: string;
+  email?: string;
+}
+
 export interface SkinAnalysis {
   id: string;
   skinScore: number;
