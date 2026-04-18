@@ -14,28 +14,55 @@ import axios from 'axios';
 
 export default function App() {
   const [currentResult, setCurrentResult] = useState<SkinAnalysis | null>(null);
-  const [history, setHistory] = useState<SkinAnalysis[]>([]);
+  const [guestHistory, setGuestHistory] = useState<SkinAnalysis[]>([]);
+  const [userHistory, setUserHistory] = useState<SkinAnalysis[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [view, setView] = useState<'camera' | 'result' | 'history' | 'login' | 'register' | 'profile'>('camera');
   const [inputMethod, setInputMethod] = useState<'camera' | 'upload'>('camera');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isMobileMenuOpen]);
   
   // Auth state
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [user, setUser] = useState<User | null>(JSON.parse(localStorage.getItem('user') || 'null'));
 
-  const fetchHistory = async () => {
+  const fetchGuestHistory = async () => {
     try {
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-      const response = await axios.get('/api/history', config);
-      setHistory(response.data);
+      const response = await axios.get('/api/history');
+      setGuestHistory(response.data);
     } catch (err) {
-      console.error("Error fetching history:", err);
+      console.error("Error fetching guest history:", err);
+    }
+  };
+
+  const fetchUserHistory = async () => {
+    if (!token) return;
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const response = await axios.get('/api/my-history', config);
+      setUserHistory(response.data);
+    } catch (err) {
+      console.error("Error fetching user history:", err);
     }
   };
 
   useEffect(() => {
-    fetchHistory();
+    fetchGuestHistory();
+    if (token) {
+      fetchUserHistory();
+    } else {
+      setUserHistory([]);
+    }
   }, [token]);
 
   const handleLogin = (newToken: string, newUser: User) => {
@@ -69,7 +96,8 @@ export default function App() {
       const response = await axios.post('/api/analyze', formData, config);
       setCurrentResult(response.data);
       setView('result');
-      fetchHistory();
+      fetchGuestHistory();
+      if (token) fetchUserHistory();
       toast.success("Análisis completado con éxito");
     } catch (err) {
       console.error("Analysis failed:", err);
@@ -94,7 +122,8 @@ export default function App() {
           try {
             const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
             await axios.delete(`/api/history/${id}`, config);
-            fetchHistory();
+            fetchGuestHistory();
+            if (token) fetchUserHistory();
             toast.success("Análisis eliminado correctamente");
           } catch (err) {
             console.error("Error deleting history:", err);
@@ -128,7 +157,7 @@ export default function App() {
                 onClick={() => setView('history')}
                 className={`text-sm tracking-wide transition-all ${view === 'history' ? 'text-[#0B5C66] font-bold border-b-2 border-[#0B5C66] pb-1' : 'text-slate-500 hover:text-slate-800'}`}
               >
-                Progreso
+                Historial
               </button>
             </nav>
           </div>
@@ -171,7 +200,7 @@ export default function App() {
               </div>
               <div className="flex flex-col p-4 gap-2">
                 <button onClick={() => { setView('camera'); setIsMobileMenuOpen(false); }} className={`p-3 text-left rounded-lg text-sm tracking-wide transition-all ${view === 'camera' || view === 'result' ? 'bg-teal-50 text-[#0B5C66] font-bold' : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'}`}>Análisis</button>
-                <button onClick={() => { setView('history'); setIsMobileMenuOpen(false); }} className={`p-3 text-left rounded-lg text-sm tracking-wide transition-all ${view === 'history' ? 'bg-teal-50 text-[#0B5C66] font-bold' : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'}`}>Progreso</button>
+                <button onClick={() => { setView('history'); setIsMobileMenuOpen(false); }} className={`p-3 text-left rounded-lg text-sm tracking-wide transition-all ${view === 'history' ? 'bg-teal-50 text-[#0B5C66] font-bold' : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'}`}>Historial</button>
                 {user ? (
                   <button onClick={() => { setView('profile'); setIsMobileMenuOpen(false); }} className={`p-3 text-left rounded-lg text-sm tracking-wide transition-all ${view === 'profile' ? 'bg-teal-50 text-[#0B5C66] font-bold' : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'}`}>Mi Perfil</button>
                 ) : (
@@ -217,34 +246,33 @@ export default function App() {
           {view === 'history' && (
             <motion.div key="history-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="max-w-4xl mx-auto">
               <div className="text-center mb-12 mt-8">
-                <h2 className="text-3xl font-bold text-slate-900 mb-4">Tu Progreso</h2>
-                <p className="text-slate-500">Revisa tus análisis anteriores y observa tu evolución.</p>
+                <h2 className="text-3xl font-bold text-slate-900 mb-4">Historial de Análisis</h2>
+                <p className="text-slate-500">Consulta los resultados de los últimos análisis faciales.</p>
               </div>
-              <History history={history} onSelect={handleSelectHistory} onDelete={handleDeleteHistory} />
-              {history.length === 0 && (
+              <History history={guestHistory} onSelect={handleSelectHistory} onDelete={handleDeleteHistory} />
+              {guestHistory.length === 0 && (
                 <div className="text-center py-24 bg-white rounded-3xl border border-gray-200 border-dashed shadow-sm">
                   <HistoryIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-slate-500 font-medium">No tienes análisis previos aún.</p>
+                  <p className="text-slate-500 font-medium">No hay análisis recientes disponibles.</p>
                   <button onClick={() => setView('camera')} className="mt-4 text-[#0B5C66] font-bold hover:underline">Comienza tu primer análisis</button>
                 </div>
               )}
             </motion.div>
           )}
 
-          {view === 'login' && <Login onLogin={handleLogin} onSwitchToRegister={() => setView('register')} />}
-          {view === 'register' && <Register onRegisterSuccess={() => setView('login')} onSwitchToLogin={() => setView('login')} />}
-          {view === 'profile' && user && token && (
-            <Profile 
-              user={user} 
-              token={token} 
-              onLogout={handleLogout} 
-              onUpdate={handleUpdateUser}
-              history={history}
-              onSelectHistory={handleSelectHistory}
-              onDeleteHistory={handleDeleteHistory}
-            />
-          )}
-        </AnimatePresence>
+            {view === 'login' && <Login onLogin={handleLogin} onSwitchToRegister={() => setView('register')} />}
+            {view === 'register' && <Register onRegisterSuccess={() => setView('login')} onSwitchToLogin={() => setView('login')} />}
+            {view === 'profile' && user && token && (
+              <Profile 
+                user={user} 
+                token={token} 
+                onLogout={handleLogout} 
+                onUpdate={handleUpdateUser} 
+                history={userHistory}
+                onSelectHistory={handleSelectHistory}
+                onDeleteHistory={handleDeleteHistory}
+              />
+            )}        </AnimatePresence>
       </main>
 
       <footer className="border-t border-gray-200 py-12 mt-20 bg-white">

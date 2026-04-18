@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { User, Mail, CreditCard, Lock, Loader2, Save, LogOut, Clock, History as HistoryIcon } from 'lucide-react';
 import { User as UserType, SkinAnalysis } from '../types';
 import { History } from './History';
+import { ProductManager } from './ProductManager';
 
 interface ProfileProps {
   user: UserType;
@@ -167,6 +168,13 @@ export const Profile: React.FC<ProfileProps> = ({
           </div>
         )}
       </div>
+
+      {user.role === 'admin' && (
+        <>
+          <div className="h-px bg-gray-100" />
+          <ProductManager token={token} />
+        </>
+      )}
     </motion.div>
   );
 };

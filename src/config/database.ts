@@ -3,12 +3,22 @@ import path from 'path';
 import crypto from 'crypto';
 import { createRequire } from 'module';
 
-console.log(">>> [init] Configuring Sequelize for MySQL...");
-export const sequelize = new Sequelize('style-scan', 'root', 'root', {
-  host: 'localhost',
-  dialect: 'mysql',
+const require = createRequire(import.meta.url);
+const sqlite3 = require("sqlite3");
+const sqlite3Verbose = sqlite3.verbose();
+
+export const sequelize = new Sequelize({
+  dialect: 'sqlite',
+  storage: path.join(process.cwd(), 'database.sqlite'),
+  dialectModule: sqlite3Verbose,
   logging: false
 });
+// console.log(">>> [init] Configuring Sequelize for MySQL...");
+// export const sequelize = new Sequelize('style-scan', 'root', 'root', {
+//   host: 'localhost',
+//   dialect: 'mysql',
+//   logging: false
+// });
 
 export const User = sequelize.define('User', {
   id: {
@@ -63,6 +73,34 @@ export const Analysis = sequelize.define('Analysis', {
   isMock: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  }
+});
+
+export const Product = sequelize.define('Product', {
+  id: {
+    type: DataTypes.STRING,
+    primaryKey: true
+  },
+  target: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  price: {
+    type: DataTypes.FLOAT,
+    allowNull: false
+  },
+  images: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    defaultValue: '[]'
   }
 });
 

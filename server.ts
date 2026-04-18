@@ -128,33 +128,6 @@ async function startServer() {
         await sequelize.sync({ alter: true });
         console.log(">>> [db] Database synced with schema changes.");
 
-        // Seed Users
-        const adminExists = await User.findOne({ where: { username: 'admin' } });
-        if (!adminExists) {
-          const hashedAdminPassword = await bcrypt.hash('admin', 10);
-          await User.create({
-            username: 'admin',
-            password: hashedAdminPassword,
-            role: 'admin',
-            fullName: 'Administrador',
-            email: 'admin@example.com'
-          });
-          console.log(">>> [db] Admin user created.");
-        }
-
-        const clienteExists = await User.findOne({ where: { username: 'cliente' } });
-        if (!clienteExists) {
-          const hashedClientePassword = await bcrypt.hash('cliente', 10);
-          await User.create({
-            username: 'cliente',
-            password: hashedClientePassword,
-            role: 'cliente',
-            fullName: 'Cliente de Prueba',
-            email: 'cliente@example.com'
-          });
-          console.log(">>> [db] Cliente user created.");
-        }
-
         setDbReady(true);
       } catch (err) {
         console.error(">>> [db] Unable to connect to the database:", err);

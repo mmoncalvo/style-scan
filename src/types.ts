@@ -1,9 +1,18 @@
 export interface User {
   id: string;
   username: string;
-  role: string;
+  role: 'admin' | 'cliente';
   fullName?: string;
   email?: string;
+}
+
+export interface Product {
+  id: string;
+  target: string;
+  title: string;
+  description: string;
+  price: number;
+  images: string[];
 }
 
 export interface SkinAnalysis {

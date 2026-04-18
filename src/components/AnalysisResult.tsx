@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { SkinAnalysis } from '../types';
+import { SkinAnalysis, Product } from '../types';
 import { motion } from 'motion/react';
 import { Activity, User, Droplets, Sparkles, AlertCircle, ShoppingBag, X, Clock } from 'lucide-react';
 import productsData from '../../data/products.json';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface AnalysisResultProps {
   result: SkinAnalysis;
@@ -12,7 +14,16 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result }) => {
   const [activeLayer, setActiveLayer] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
-  // console.log("🚀 ~ AnalysisResult ~ result:", result)
+  React.useEffect(() => {
+    if (selectedProduct) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [selectedProduct]);
 
   const metrics = [
     { label: 'Puntos', type: 'age_spot', targetKey: 'spots', value: result.spots, icon: Activity, color: 'text-blue-400' },
@@ -30,12 +41,82 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result }) => {
 
   // Get 3 areas that need the most attention (lowest values)
   const areasToImprove = [...metrics].sort((a, b) => a.value - b.value).filter((a: any) => a.value < 75);
-  console.log("🚀 ~ AnalysisResult ~ areasToImprove:", areasToImprove)
 
   // Recommend 2 products per area
   const recommendedProducts = areasToImprove.flatMap(area => {
     return productsData.filter((p: any) => p.target === area.targetKey);
   });
+
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    const primaryColor = [11, 92, 102]; // #0B5C66
+
+    // Header
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPORTE DE ANÁLISIS FACIAL', 105, 25, { align: 'center' });
+
+    // Summary Section
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(16);
+    doc.text('Resumen General', 20, 55);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 65);
+    doc.text(`Puntuación de Piel (Skin Score): ${Math.round(result.skinScore)}/100`, 20, 72);
+    doc.text(`Edad Biológica Estimada: ${result.skinAge} años`, 20, 79);
+    doc.text(`Tipo de Piel: ${result.skinType}`, 20, 86);
+
+    // Metrics Table
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalle de Biomarcadores', 20, 105);
+
+    const tableData = metrics.map(m => [m.label, `${m.value}%`]);
+    autoTable(doc, {
+      startY: 110,
+      head: [['Parámetro', 'Valor']],
+      body: tableData,
+      headStyles: { fillColor: primaryColor as [number, number, number] },
+      margin: { left: 20, right: 20 }
+    });
+
+    // Recommendations
+    const finalY = (doc as any).lastAutoTable.finalY + 15;
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Recomendaciones Personalizadas', 20, finalY);
+
+    const recommendations = areasToImprove.slice(0, 3).map(area => {
+      const prods = productsData.filter((p: any) => p.target === area.targetKey).slice(0, 1);
+      return [
+        area.label,
+        prods.length > 0 ? prods[0].title : 'Tratamiento específico',
+        prods.length > 0 ? prods[0].description.substring(0, 80) + '...' : '-'
+      ];
+    });
+
+    autoTable(doc, {
+      startY: finalY + 5,
+      head: [['Área de Mejora', 'Producto Recomendado', 'Descripción']],
+      body: recommendations,
+      headStyles: { fillColor: primaryColor as [number, number, number] },
+      styles: { fontSize: 10 },
+      margin: { left: 20, right: 20 }
+    });
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Powered by Derma AI - Skin Analysis Studio', 105, 285, { align: 'center' });
+
+    doc.save(`DermaAI_Reporte_${result.id.substring(0, 8)}.pdf`);
+    toast.success('Reporte PDF generado correctamente');
+  };
 
   return (
     <motion.div
@@ -66,10 +147,12 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result }) => {
               <p className="text-slate-500 text-sm leading-relaxed mb-6">
                 Su piel muestra una salud general estable, aunque se detectan áreas de mejora en texturas según los biomarcadores. Edad biológica estimada: <span className="font-semibold text-slate-700">{result.skinAge} años</span>.
               </p>
-              <button className="w-full py-4 px-6 bg-[#0B5C66] hover:bg-[#094A52] text-white text-sm font-bold tracking-widest uppercase rounded-xl transition-colors shadow-md">
+              <button 
+                onClick={handleDownloadPDF}
+                className="w-full py-4 px-6 bg-[#0B5C66] hover:bg-[#094A52] text-white text-sm font-bold tracking-widest uppercase rounded-xl transition-colors shadow-md"
+              >
                 Descargar Reporte PDF
-              </button>
-            </div>
+              </button>            </div>
           </div>
 
           {/* Image Card */}

@@ -4,7 +4,7 @@ import path from 'path';
 import axios from 'axios';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { Analysis, User } from '../config/database.js'; // tsx resolves this seamlessly
+import { Analysis, User, Product } from '../config/database.js'; // tsx resolves this seamlessly
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -20,6 +20,14 @@ const authenticate = (req: any, res: any, next: any) => {
     next();
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+const isAdmin = (req: any, res: any, next: any) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    res.status(403).json({ error: "Forbidden: Admin access required" });
   }
 };
 
@@ -80,7 +88,9 @@ router.put('/profile', authenticate, async (req: any, res: any) => {
 // Multer Setup for image uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    // If fieldname is 'productImages', save to uploads/products/
+    const dest = file.fieldname === 'productImages' ? 'uploads/products/' : 'uploads/';
+    cb(null, dest);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -88,6 +98,19 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage: storage });
+
+router.post("/upload-products", authenticate, isAdmin, upload.array('productImages', 10), (req: any, res: any) => {
+  try {
+    const files = req.files as Express.Multer.File[];
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: "No images uploaded" });
+    }
+    const paths = files.map(file => `/uploads/products/${file.filename}`);
+    res.json({ paths });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
@@ -119,6 +142,69 @@ async function pollTask(taskId: string, apiKey: string, baseUrl: string) {
   }
   throw new Error('Max attempts exceeded while polling');
 }
+
+// Products Routes
+router.get("/products", async (req: any, res: any) => {
+  try {
+    const { target } = req.query;
+    const where: any = {};
+    if (target) where.target = target;
+    
+    const products = await Product.findAll({ where, order: [['title', 'ASC']] });
+    const parsedProducts = products.map((p: any) => {
+      const json = p.toJSON();
+      try {
+        json.images = JSON.parse(json.images || '[]');
+      } catch (e) {
+        json.images = [];
+      }
+      return json;
+    });
+    res.json(parsedProducts);
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch products", details: error.message });
+  }
+});
+
+router.post("/products", authenticate, isAdmin, async (req: any, res: any) => {
+  try {
+    const data = { ...req.body };
+    if (Array.isArray(data.images)) {
+      data.images = JSON.stringify(data.images);
+    }
+    const product = await Product.create(data);
+    res.json(product);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.put("/products/:id", authenticate, isAdmin, async (req: any, res: any) => {
+  try {
+    const product: any = await Product.findByPk(req.params.id);
+    if (!product) return res.status(404).json({ error: "Product not found" });
+    
+    const data = { ...req.body };
+    if (Array.isArray(data.images)) {
+      data.images = JSON.stringify(data.images);
+    }
+    
+    await product.update(data);
+    res.json(product);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.delete("/products/:id", authenticate, isAdmin, async (req: any, res: any) => {
+  try {
+    const deletedCount = await Product.destroy({ where: { id: req.params.id } });
+    if (deletedCount === 0) return res.status(404).json({ error: "Product not found" });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // API Routes
 router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
@@ -312,25 +398,13 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
 
 router.get("/history", async (req: any, res: any) => {
   try {
-    console.log(">>> [api/history] Fetching analysis history...");
+    console.log(">>> [api/history] Fetching guest analysis history...");
 
-    // Filter by userId if token is present
-    let whereClause = {};
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.split(' ')[1];
-        const decoded: any = jwt.verify(token, JWT_SECRET);
-        whereClause = { userId: decoded.id };
-      } catch (e) {
-        // Ignore token error
-      }
-    }
-
+    // Always fetch records with userId = null (guest history)
     const history = await Analysis.findAll({
-      where: whereClause,
+      where: { userId: null },
       order: [['createdAt', 'DESC']],
-      limit: 10
+      limit: 20
     });
     const parsedHistory = history.map((record: any) => {
       const jsonRecord = record.toJSON();
@@ -343,14 +417,34 @@ router.get("/history", async (req: any, res: any) => {
       }
       return jsonRecord;
     });
-    console.log(`>>> [api/history] Found ${parsedHistory.length} records.`);
     res.json(parsedHistory);
   } catch (error: any) {
-    console.error(">>> [api/history] Error fetching history:", error);
-    res.status(500).json({
-      error: "Failed to fetch history",
-      details: error.message
+    res.status(500).json({ error: "Failed to fetch history", details: error.message });
+  }
+});
+
+router.get("/my-history", authenticate, async (req: any, res: any) => {
+  try {
+    console.log(`>>> [api/my-history] Fetching history for user ${req.user.id}...`);
+    const history = await Analysis.findAll({
+      where: { userId: req.user.id },
+      order: [['createdAt', 'DESC']],
+      limit: 50
     });
+    const parsedHistory = history.map((record: any) => {
+      const jsonRecord = record.toJSON();
+      try {
+        if (typeof jsonRecord.masks === 'string') {
+          jsonRecord.masks = JSON.parse(jsonRecord.masks);
+        }
+      } catch (e) {
+        jsonRecord.masks = {};
+      }
+      return jsonRecord;
+    });
+    res.json(parsedHistory);
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch user history", details: error.message });
   }
 });
 
