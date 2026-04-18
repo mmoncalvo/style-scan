@@ -285,7 +285,7 @@ export default function App() {
                 <p className="text-slate-500 dark:text-slate-400">Consulta los resultados de los últimos análisis faciales.</p>
               </div>
               <History history={guestHistory} onSelect={handleSelectHistory} onDelete={handleDeleteHistory} />
-              {guestHistory.length === 0 && (
+              {guestHistory !== null && guestHistory.length === 0 && (
                 <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-slate-800 border-dashed shadow-sm transition-colors duration-300">
                   <HistoryIcon className="w-12 h-12 text-gray-300 dark:text-slate-700 mx-auto mb-4" />
                   <p className="text-slate-500 dark:text-slate-400 font-medium">No hay análisis recientes disponibles.</p>
