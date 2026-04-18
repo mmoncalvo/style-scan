@@ -105,7 +105,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   };
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto aspect-[4/3] bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+    <div className="relative w-full max-w-2xl mx-auto aspect-[4/3] bg-zinc-100/90 dark:bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-400 dark:border-zinc-800 shadow-2xl">
       <AnimatePresence mode="wait">
         {!capturedImage ? (
           <motion.div
@@ -123,13 +123,13 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               className="w-full h-full object-cover"
             />
             {isLoading && !error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 gap-4">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-100/90 dark:bg-zinc-900/90 gap-4">
                 <RefreshCw className="w-8 h-8 text-emerald-500 animate-spin" />
                 <p className="text-zinc-400 text-sm animate-pulse">Iniciando cámara...</p>
               </div>
             )}
             {error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90 p-8 text-center gap-6">
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center gap-6">
                 <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
                   <AlertCircle className="w-8 h-8 text-red-500" />
                 </div>

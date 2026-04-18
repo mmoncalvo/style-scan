@@ -50,7 +50,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
       .slice(0, 2);
   }).slice(0, 6);
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const doc = new jsPDF();
     const primaryColor = [11, 92, 102]; // #0B5C66
 
@@ -62,26 +62,49 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
     doc.setFont('helvetica', 'bold');
     doc.text('REPORTE DE ANÁLISIS FACIAL', 105, 25, { align: 'center' });
 
+    let summaryStartY = 50;
+
+    // Add Image to PDF
+    try {
+      const img = await fetch(result.imageUrl);
+      const blob = await img.blob();
+      const reader = new FileReader();
+      const imageData = await new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      const imgProps = doc.getImageProperties(imageData);
+      const pdfWidth = 80;
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      doc.addImage(imageData, 'JPEG', (210 - pdfWidth) / 2, 45, pdfWidth, pdfHeight);
+      summaryStartY = 45 + pdfHeight + 10;
+    } catch (e) {
+      console.error("Could not add image to PDF", e);
+    }
+
     // Summary Section
     doc.setTextColor(0, 0, 0);
     doc.setFontSize(16);
-    doc.text('Resumen General', 20, 55);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen General', 20, summaryStartY);
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 65);
-    doc.text(`Puntuación de Piel (Skin Score): ${Math.round(result.skinScore)}/100`, 20, 72);
-    doc.text(`Edad Biológica Estimada: ${result.skinAge} años`, 20, 79);
-    doc.text(`Tipo de Piel: ${result.skinType}`, 20, 86);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, summaryStartY + 10);
+    doc.text(`Puntuación de Piel (Skin Score): ${Math.round(result.skinScore)}/100`, 20, summaryStartY + 17);
+    doc.text(`Edad Biológica Estimada: ${result.skinAge} años`, 20, summaryStartY + 24);
+    doc.text(`Tipo de Piel: ${result.skinType}`, 20, summaryStartY + 31);
 
     // Metrics Table
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('Detalle de Biomarcadores', 20, 105);
+    doc.text('Detalle de Biomarcadores', 20, summaryStartY + 45);
 
     const tableData = metrics.map(m => [m.label, `${m.value}%`]);
     autoTable(doc, {
-      startY: 110,
+      startY: summaryStartY + 50,
       head: [['Parámetro', 'Valor']],
       body: tableData,
       headStyles: { fillColor: primaryColor as [number, number, number] },
@@ -132,27 +155,27 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
         {/* LEFT COLUMN */}
         <div className="w-full lg:w-[35%] flex flex-col gap-6">
           {/* Main Score Card */}
-          <div className="bg-[#F3F4F6] rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col items-center">
+          <div className="bg-[#F3F4F6] dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center transition-colors duration-300">
             {/* Dark Teal Area */}
             <div className="bg-[#0B5C66] w-full rounded-2xl flex flex-col items-center justify-center py-10 shadow-md">
-              <div className="w-40 h-40 bg-white rounded-full flex flex-col items-center justify-center shadow-lg relative">
+              <div className="w-40 h-40 bg-white dark:bg-slate-800 rounded-full flex flex-col items-center justify-center shadow-lg relative transition-colors duration-300">
                 <svg className="absolute inset-0 w-full h-full -rotate-90">
-                  <circle cx="80" cy="80" r="76" stroke="#E5E7EB" strokeWidth="8" fill="none" />
-                  <circle cx="80" cy="80" r="76" stroke="#0B5C66" strokeWidth="8" fill="none" strokeDasharray="477" strokeDashoffset={477 - (477 * result.skinScore) / 100} />
+                  <circle cx="80" cy="80" r="76" stroke="#E5E7EB" strokeWidth="8" fill="none" className="dark:stroke-slate-700" />
+                  <circle cx="80" cy="80" r="76" stroke="#0B5C66" strokeWidth="8" fill="none" strokeDasharray="477" strokeDashoffset={477 - (477 * result.skinScore) / 100} className="dark:stroke-teal-400" />
                 </svg>
-                <span className="text-5xl font-black text-slate-900 leading-none">{Math.round(result.skinScore)}<span className="text-xl">.{(result.skinScore % 1 * 10).toFixed(0)}</span></span>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Skin Score</span>
+                <span className="text-5xl font-black text-slate-900 dark:text-white leading-none">{Math.round(result.skinScore)}<span className="text-xl">.{(result.skinScore % 1 * 10).toFixed(0)}</span></span>
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Skin Score</span>
               </div>
             </div>
 
             <div className="mt-8 text-center px-2">
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Estado General</h3>
-              <p className="text-slate-500 text-sm leading-relaxed mb-6">
-                Su piel muestra una salud general estable, aunque se detectan áreas de mejora en texturas según los biomarcadores. Edad biológica estimada: <span className="font-semibold text-slate-700">{result.skinAge} años</span>.
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Estado General</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
+                Su piel muestra una salud general estable, aunque se detectan áreas de mejora en texturas según los biomarcadores. Edad biológica estimada: <span className="font-semibold text-slate-700 dark:text-slate-300">{result.skinAge} años</span>.
               </p>
               <button
                 onClick={handleDownloadPDF}
-                className="w-full py-4 px-6 bg-[#0B5C66] hover:bg-[#094A52] text-white text-sm font-bold tracking-widest uppercase rounded-xl transition-colors shadow-md"
+                className="w-full py-4 px-6 bg-[#0B5C66] hover:bg-[#094A52] dark:bg-teal-600 dark:hover:bg-teal-700 text-white text-sm font-bold tracking-widest uppercase rounded-xl transition-colors shadow-md"
               >
                 Descargar Reporte PDF
               </button>            </div>
@@ -184,10 +207,10 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
         <div className="w-full lg:w-[65%] flex flex-col gap-10">
 
           {/* Detailed Metrics */}
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-            <div className="mb-8 border-b-2 border-gray-100 pb-4 inline-block">
-              <h2 className="text-2xl font-bold text-[#0B5C66]">Métricas Detalladas</h2>
-              <p className="text-slate-500 text-sm mt-1">Análisis multiespectral mediante IA avanzada.</p>
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-slate-800 transition-colors duration-300">
+            <div className="mb-8 border-b-2 border-gray-100 dark:border-slate-800 pb-4 inline-block">
+              <h2 className="text-2xl font-bold text-[#0B5C66] dark:text-teal-400">Métricas Detalladas</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Análisis multiespectral mediante IA avanzada.</p>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-10">
@@ -198,13 +221,13 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: idx * 0.05 }}
                   onClick={() => setActiveLayer(activeLayer === metric.type ? null : metric.type)}
-                  className={`cursor-pointer flex flex-col items-center text-center transition-all duration-200 group ${activeLayer === metric.type ? '' : ''}`}
+                  className={`cursor-pointer flex flex-col items-center text-center transition-all duration-200 group`}
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${activeLayer === metric.type ? 'bg-[#0B5C66] shadow-md' : 'bg-teal-50 group-hover:bg-teal-100'}`}>
-                    <metric.icon className={`w-5 h-5 ${activeLayer === metric.type ? 'text-white' : 'text-[#0B5C66]'}`} />
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 transition-colors ${activeLayer === metric.type ? 'bg-[#0B5C66] dark:bg-teal-500 shadow-md' : 'bg-teal-50 dark:bg-teal-900/20 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/40'}`}>
+                    <metric.icon className={`w-5 h-5 ${activeLayer === metric.type ? 'text-white' : 'text-[#0B5C66] dark:text-teal-400'}`} />
                   </div>
-                  <div className="text-xl font-black text-slate-800 mb-1">{typeof metric.value === 'number' && metric.value > 10 ? `${metric.value}%` : metric.value}</div>
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest leading-tight">{metric.label}</div>
+                  <div className="text-xl font-black text-slate-800 dark:text-white mb-1">{typeof metric.value === 'number' && metric.value > 10 ? `${metric.value}%` : metric.value}</div>
+                  <div className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-tight">{metric.label}</div>
                 </motion.div>
               ))}
             </div>
@@ -213,35 +236,34 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
           {/* Recommended Products */}
           <div className="bg-transparent">
             <div className="flex items-center gap-4 mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Recomendaciones Curadas</h2>
-              <span className="bg-teal-100 text-[#0B5C66] text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase">Para Ti</span>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Recomendaciones Curadas</h2>
+              <span className="bg-teal-100 dark:bg-teal-900/30 text-[#0B5C66] dark:text-teal-400 text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase">Para Ti</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {recommendedProducts.slice(0, 6).map(product => {
-                console.log("🚀 ~ AnalysisResult ~ product:", product)
                 const relatedMetric = metrics.find(m => m.targetKey === product.target);
                 return (
                   <motion.div
                     key={product.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100 flex flex-col cursor-pointer group"
+                    className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100 dark:border-slate-800 flex flex-col cursor-pointer group"
                     onClick={() => setSelectedProduct(product)}
                   >
-                    <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden flex items-center justify-center p-4">
+                    <div className="aspect-[4/3] bg-gray-50 dark:bg-slate-800 relative overflow-hidden flex items-center justify-center p-4">
                       <img src={product.images?.[0]} alt={product.title} className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute top-3 right-3 bg-white w-8 h-8 rounded-full shadow-sm flex items-center justify-center">
-                        {relatedMetric ? <relatedMetric.icon className="w-4 h-4 text-[#0B5C66]" /> : <ShoppingBag className="w-4 h-4 text-[#0B5C66]" />}
+                      <div className="absolute top-3 right-3 bg-white dark:bg-slate-900 w-8 h-8 rounded-full shadow-sm flex items-center justify-center">
+                        {relatedMetric ? <relatedMetric.icon className="w-4 h-4 text-[#0B5C66] dark:text-teal-400" /> : <ShoppingBag className="w-4 h-4 text-[#0B5C66] dark:text-teal-400" />}
                       </div>
                     </div>
                     <div className="p-5 flex flex-col flex-grow">
-                      <div className="text-[10px] font-bold text-[#0B5C66] tracking-widest uppercase mb-2">{relatedMetric?.label || product.target}</div>
-                      <h4 className="text-sm font-bold text-slate-900 leading-tight mb-4 flex-grow">{product.title}</h4>
+                      <div className="text-[10px] font-bold text-[#0B5C66] dark:text-teal-400 tracking-widest uppercase mb-2">{relatedMetric?.label || product.target}</div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight mb-4 flex-grow">{product.title}</h4>
 
                       <div className="flex items-center justify-between mt-auto">
-                        <span className="font-bold text-slate-900">${product.price.toFixed(2)}</span>
-                        <button className="w-8 h-8 rounded-full bg-[#0B5C66] text-white flex items-center justify-center shadow-md hover:bg-[#094A52] transition-colors">
+                        <span className="font-bold text-slate-900 dark:text-white">${product.price.toFixed(2)}</span>
+                        <button className="w-8 h-8 rounded-full bg-[#0B5C66] dark:bg-teal-600 text-white flex items-center justify-center shadow-md hover:bg-[#094A52] dark:hover:bg-teal-700 transition-colors">
                           <span className="text-lg font-light leading-none mb-0.5">+</span>
                         </button>
                       </div>
@@ -260,54 +282,54 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm"
             onClick={() => setSelectedProduct(null)}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="relative w-full max-w-lg bg-white rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh]"
+            className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl overflow-hidden shadow-2xl z-10 flex flex-col max-h-[90vh] transition-colors duration-300"
           >
             <button
               onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 right-4 z-10 p-2 bg-white/80 hover:bg-white text-slate-600 rounded-full backdrop-blur-md transition-colors shadow-sm"
+              className="absolute top-4 right-4 z-10 p-2 bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full backdrop-blur-md transition-colors shadow-sm"
             >
               <X className="w-5 h-5" />
             </button>
-            <div className="aspect-video bg-gray-50 relative shrink-0 max-h-[300px] flex items-center justify-center p-4">
+            <div className="aspect-video bg-gray-50 dark:bg-slate-800 relative shrink-0 max-h-[300px] flex items-center justify-center p-4">
               <img src={selectedProduct.image} alt={selectedProduct.title} className="w-full h-full object-contain" />
             </div>
             <div className="p-8 overflow-y-auto">
               <div className="flex items-start justify-between gap-4 mb-2">
                 <div>
-                  <div className="text-xs text-[#0B5C66] font-bold mb-2 uppercase tracking-widest">{selectedProduct.target}</div>
-                  <h3 className="text-2xl font-black text-slate-900 leading-tight">{selectedProduct.title}</h3>
+                  <div className="text-xs text-[#0B5C66] dark:text-teal-400 font-bold mb-2 uppercase tracking-widest">{selectedProduct.target}</div>
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">{selectedProduct.title}</h3>
                 </div>
-                <div className="text-2xl font-bold text-slate-900 shrink-0">${selectedProduct.price.toFixed(2)}</div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white shrink-0">${selectedProduct.price.toFixed(2)}</div>
               </div>
-              <p className="text-slate-600 text-sm leading-relaxed my-6">
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed my-6">
                 {selectedProduct.description}
               </p>
 
-              <div className="bg-teal-50/50 rounded-2xl p-4 border border-teal-100">
+              <div className="bg-teal-50/50 dark:bg-teal-900/10 rounded-2xl p-4 border border-teal-100 dark:border-teal-900/30">
                 {(() => {
                   const m = metrics.find(m => m.targetKey === selectedProduct.target);
                   if (!m) return null;
                   return (
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
-                        <m.icon className="w-6 h-6 text-[#0B5C66]" />
+                      <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm shrink-0">
+                        <m.icon className="w-6 h-6 text-[#0B5C66] dark:text-teal-400" />
                       </div>
                       <div className="flex flex-col">
-                        <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-0.5">{m.label}</div>
-                        <div className="text-lg font-black text-slate-900 leading-none">{m.value}</div>
+                        <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">{m.label}</div>
+                        <div className="text-lg font-black text-slate-900 dark:text-white leading-none">{m.value}</div>
                       </div>
                     </div>
                   );
                 })()}
               </div>
               <div className="mt-8">
-                <button className="w-full py-4 text-white bg-[#0B5C66] hover:bg-[#094A52] font-bold tracking-wide uppercase text-sm rounded-xl transition-colors shadow-lg shadow-teal-900/20">
+                <button className="w-full py-4 text-white bg-[#0B5C66] dark:bg-teal-600 hover:bg-[#094A52] dark:hover:bg-teal-700 font-bold tracking-wide uppercase text-sm rounded-xl transition-colors shadow-lg shadow-teal-900/20">
                   Añadir al carrito
                 </button>
               </div>

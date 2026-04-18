@@ -14,7 +14,7 @@ export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete })
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-slate-400 mb-4 px-2">
+      <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-4 px-2">
         <Clock className="w-5 h-5" />
         <h3 className="font-bold uppercase tracking-wider text-sm">Historial Reciente</h3>
       </div>
@@ -26,33 +26,33 @@ export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete })
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.1 }}
             onClick={() => onSelect(item)}
-            className="w-full flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-teal-100 transition-all group text-left cursor-pointer"
+            className="w-full flex items-center gap-4 p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 hover:border-teal-100 dark:hover:border-teal-900/50 transition-all group text-left cursor-pointer transition-colors duration-300"
           >
-            <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 bg-gray-50">
+            <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800 transition-colors duration-300">
               <img src={item.imageUrl} alt="History" className="w-full h-full object-cover" />
             </div>
             <div className="flex-grow min-w-0">
-              <div className="text-slate-800 font-bold truncate">Análisis {item.skinType}</div>
-              <div className="text-slate-500 text-xs mt-0.5">
+              <div className="text-slate-800 dark:text-white font-bold truncate">Análisis {item.skinType}</div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">
                 {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-[#0B5C66] font-black text-lg">{Math.round(item.skinScore)}</div>
-                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Score</div>
+                <div className="text-[#0B5C66] dark:text-teal-400 font-black text-lg">{Math.round(item.skinScore)}</div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-0.5">Score</div>
               </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(item.id);
                 }}
-                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-2"
+                className="p-2 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors ml-2"
                 title="Eliminar historial"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
-              <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-[#0B5C66] transition-colors" />
+              <ChevronRight className="w-5 h-5 text-gray-300 dark:text-slate-700 group-hover:text-[#0B5C66] dark:group-hover:text-teal-400 transition-colors" />
             </div>
           </motion.div>
         ))}

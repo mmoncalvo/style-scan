@@ -40,27 +40,27 @@ export const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchT
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-sm border border-gray-100"
+      className="max-w-md mx-auto bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 transition-colors duration-300"
     >
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-teal-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <UserPlus className="w-8 h-8 text-[#0B5C66]" />
+        <div className="w-16 h-16 bg-teal-50 dark:bg-teal-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <UserPlus className="w-8 h-8 text-[#0B5C66] dark:text-teal-400" />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900">Crear Cuenta</h2>
-        <p className="text-slate-500 mt-2">Únete a Derma AI para seguir tu progreso</p>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Crear Cuenta</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-2">Únete a Derma AI para seguir tu progreso</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1">
-          <label className="text-sm font-medium text-slate-700 ml-1">Nombre Completo</label>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Nombre Completo</label>
           <div className="relative">
-            <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
               placeholder="Juan Pérez"
               required
             />
@@ -68,15 +68,15 @@ export const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchT
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-slate-700 ml-1">Correo Electrónico</label>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Correo Electrónico</label>
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
               placeholder="juan@example.com"
               required
             />
@@ -84,15 +84,15 @@ export const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchT
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-slate-700 ml-1">Usuario</label>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Usuario</label>
           <div className="relative">
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
               placeholder="juan123"
               required
             />
@@ -100,15 +100,15 @@ export const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchT
         </div>
 
         <div className="space-y-1">
-          <label className="text-sm font-medium text-slate-700 ml-1">Contraseña</label>
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Contraseña</label>
           <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 dark:text-slate-500" />
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all"
+              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
               placeholder="••••••••"
               required
             />
@@ -118,7 +118,7 @@ export const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchT
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-4 bg-[#0B5C66] text-white rounded-2xl font-bold shadow-lg shadow-[#0B5C66]/20 hover:bg-[#0B5C66]/90 transition-all flex items-center justify-center gap-2 mt-4"
+          className="w-full py-4 bg-[#0B5C66] dark:bg-teal-600 text-white rounded-2xl font-bold shadow-lg shadow-[#0B5C66]/20 dark:shadow-teal-900/20 hover:bg-[#0B5C66]/90 dark:hover:bg-teal-700 transition-all flex items-center justify-center gap-2 mt-4"
         >
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -129,11 +129,11 @@ export const Register: React.FC<RegisterProps> = ({ onRegisterSuccess, onSwitchT
       </form>
 
       <div className="mt-8 text-center">
-        <p className="text-slate-500 text-sm">
+        <p className="text-slate-500 dark:text-slate-400 text-sm">
           ¿Ya tienes una cuenta?{' '}
           <button
             onClick={onSwitchToLogin}
-            className="text-[#0B5C66] font-bold hover:underline"
+            className="text-[#0B5C66] dark:text-teal-400 font-bold hover:underline"
           >
             Inicia sesión aquí
           </button>

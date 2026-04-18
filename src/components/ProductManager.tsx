@@ -16,13 +16,13 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center gap-4 group"
+      className="p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm flex items-center gap-4 group transition-colors duration-300"
     >
-      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0 relative">
+      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 flex-shrink-0 relative transition-colors duration-300">
         {product.images && product.images.length > 0 ? (
           <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-300">
+          <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-slate-700">
             <ImageIcon className="w-6 h-6" />
           </div>
         )}
@@ -34,24 +34,24 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
       </div>
       <div className="flex-grow min-w-0">
         <div className="flex items-center gap-2">
-          <h4 className="font-bold text-slate-800 truncate">{product.title}</h4>
-          <span className="px-2 py-0.5 bg-teal-50 text-[#0B5C66] text-[10px] font-black uppercase tracking-widest rounded-md">
+          <h4 className="font-bold text-slate-800 dark:text-white truncate transition-colors duration-300">{product.title}</h4>
+          <span className="px-2 py-0.5 bg-teal-50 dark:bg-teal-900/20 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
             {product.target}
           </span>
         </div>
-        <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{product.description}</p>
-        <p className="text-[#0B5C66] font-black mt-1">${product.price.toFixed(2)}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5 transition-colors duration-300">{product.description}</p>
+        <p className="text-[#0B5C66] dark:text-teal-400 font-black mt-1 transition-colors duration-300">${product.price.toFixed(2)}</p>
       </div>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onEdit(product)}
-          className="p-2 text-slate-400 hover:text-[#0B5C66] hover:bg-teal-50 rounded-lg transition-all"
+          className="p-2 text-slate-400 dark:text-slate-500 hover:text-[#0B5C66] dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-all"
         >
           <Pencil className="w-4 h-4" />
         </button>
         <button
           onClick={() => onDelete(product.id)}
-          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+          className="p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -148,14 +148,14 @@ const ProductForm = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto transition-colors duration-300">
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden my-8"
+        className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden my-8 border border-transparent dark:border-slate-800 transition-colors duration-300"
       >
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-[#0B5C66] text-white">
+        <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-[#0B5C66] dark:bg-teal-900/40 text-white">
           <h3 className="font-bold">{isEditing ? 'Editar Producto' : 'Nuevo Producto'}</h3>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
             <X className="w-5 h-5" />
@@ -163,53 +163,53 @@ const ProductForm = ({
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Título</label>
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Título</label>
             <input
               required
               type="text"
               value={formData.title || ''}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all"
+              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Objetivo</label>
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Objetivo</label>
               <select
                 value={formData.target || 'spots'}
                 onChange={(e) => setFormData({ ...formData, target: e.target.value })}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all"
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
               >
                 {targets.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Precio</label>
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Precio</label>
               <input
                 required
                 step="0.10"
                 type="number"
                 value={formData.price?.toFixed(2) || 0}
                 onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all"
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
               />
             </div>
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Descripción</label>
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Descripción</label>
             <textarea
               required
               rows={3}
               value={formData.description || ''}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all resize-none"
+              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all resize-none"
             />
           </div>
 
           <div className="space-y-3">
             <div className="flex items-center justify-between ml-1">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Imágenes del Producto</label>
-              <span className="text-[10px] text-slate-400 font-medium">Sube tus archivos de imagen</span>
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Imágenes del Producto</label>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Sube tus archivos de imagen</span>
             </div>
 
             <div className="relative group">
@@ -224,17 +224,17 @@ const ProductForm = ({
               />
               <label
                 htmlFor="product-image-upload"
-                className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-[#0B5C66]/30 transition-all ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-[#0B5C66]/30 dark:hover:border-teal-400/30 transition-all ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {isUploading ? (
                   <>
-                    <Loader2 className="w-6 h-6 text-[#0B5C66] animate-spin mb-2" />
-                    <span className="text-xs font-bold text-[#0B5C66]">Subiendo...</span>
+                    <Loader2 className="w-6 h-6 text-[#0B5C66] dark:text-teal-400 animate-spin mb-2" />
+                    <span className="text-xs font-bold text-[#0B5C66] dark:text-teal-400">Subiendo...</span>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-6 h-6 text-slate-400 group-hover:text-[#0B5C66] mb-2" />
-                    <span className="text-xs font-bold text-slate-500 group-hover:text-[#0B5C66]">Click para subir imágenes</span>
+                    <Upload className="w-6 h-6 text-slate-400 dark:text-slate-500 group-hover:text-[#0B5C66] dark:group-hover:text-teal-400 mb-2" />
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-[#0B5C66] dark:group-hover:text-teal-400 transition-colors">Click para subir imágenes</span>
                   </>
                 )}
               </label>
@@ -248,7 +248,7 @@ const ProductForm = ({
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-100 group bg-gray-50 shadow-sm"
+                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-100 dark:border-slate-700 group bg-gray-50 dark:bg-slate-800 shadow-sm transition-colors duration-300"
                   >
                     <img src={url} alt="Product" className="w-full h-full object-cover" />
                     <button
@@ -266,7 +266,7 @@ const ProductForm = ({
 
           <button
             type="submit"
-            className="w-full py-4 bg-[#0B5C66] text-white rounded-2xl font-bold shadow-lg shadow-[#0B5C66]/20 hover:bg-[#0B5C66]/90 transition-all flex items-center justify-center gap-2 mt-4"
+            className="w-full py-4 bg-[#0B5C66] dark:bg-teal-600 text-white rounded-2xl font-bold shadow-lg shadow-[#0B5C66]/20 dark:shadow-teal-900/20 hover:bg-[#0B5C66]/90 dark:hover:bg-teal-700 transition-all flex items-center justify-center gap-2 mt-4"
           >
             <Save className="w-5 h-5" />
             {isEditing ? 'Actualizar Producto' : 'Crear Producto'}
@@ -352,13 +352,13 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <ShoppingBag className="w-6 h-6 text-[#0B5C66]" />
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <ShoppingBag className="w-6 h-6 text-[#0B5C66] dark:text-teal-400" />
           Gestión de Productos
         </h3>
         <button
           onClick={() => { setCurrentProduct({ target: 'spots', price: 0, images: [] }); setIsEditing(false); }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#0B5C66] text-white rounded-xl font-bold hover:bg-[#0B5C66]/90 transition-all text-sm"
+          className="flex items-center gap-2 px-4 py-2 bg-[#0B5C66] dark:bg-teal-600 text-white rounded-xl font-bold hover:bg-[#0B5C66]/90 dark:hover:bg-teal-700 transition-all text-sm"
         >
           <Plus className="w-4 h-4" />
           Nuevo Producto
@@ -367,21 +367,21 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
             placeholder="Buscar productos..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all text-sm"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all text-sm transition-colors duration-300"
           />
         </div>
-        <div className="relative">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <div className="relative transition-colors duration-300">
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
           <select
             value={filterTarget}
             onChange={(e) => setFilterTarget(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 focus:border-[#0B5C66] transition-all text-sm appearance-none"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all text-sm appearance-none transition-colors duration-300"
           >
             <option value="">Todos los objetivos</option>
             {[
@@ -392,7 +392,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
         </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 overflow-x-scroll min-h-100">
         <AnimatePresence mode="popLayout">
           {filteredProducts.map((product) => (
             <ProductItem
@@ -405,8 +405,8 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
         </AnimatePresence>
 
         {!isLoading && filteredProducts.length === 0 && (
-          <div className="text-center py-12 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-            <p className="text-slate-400 text-sm">No se encontraron productos</p>
+          <div className="text-center py-12 bg-gray-50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-gray-200 dark:border-slate-800 transition-colors duration-300">
+            <p className="text-slate-400 dark:text-slate-600 text-sm">No se encontraron productos</p>
           </div>
         )}
       </div>
