@@ -6,7 +6,7 @@ import { History } from './components/History';
 import { Login } from './components/Login';
 import { Register } from './components/Register';
 import { Profile } from './components/Profile';
-import { SkinAnalysis, User } from './types';
+import { SkinAnalysis, User, Product } from './types';
 import { Sparkles, History as HistoryIcon, Camera as CameraIcon, AlertCircle, Upload, Menu, X, User as UserIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Toaster, toast } from 'sonner';
@@ -16,6 +16,7 @@ export default function App() {
   const [currentResult, setCurrentResult] = useState<SkinAnalysis | null>(null);
   const [guestHistory, setGuestHistory] = useState<SkinAnalysis[]>([]);
   const [userHistory, setUserHistory] = useState<SkinAnalysis[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [view, setView] = useState<'camera' | 'result' | 'history' | 'login' | 'register' | 'profile'>('camera');
   const [inputMethod, setInputMethod] = useState<'camera' | 'upload'>('camera');
@@ -31,7 +32,7 @@ export default function App() {
       document.body.style.overflow = 'auto';
     };
   }, [isMobileMenuOpen]);
-  
+
   // Auth state
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [user, setUser] = useState<User | null>(JSON.parse(localStorage.getItem('user') || 'null'));
@@ -56,8 +57,18 @@ export default function App() {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const response = await axios.get('/api/products');
+      setProducts(response.data);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+    }
+  };
+
   useEffect(() => {
     fetchGuestHistory();
+    fetchProducts();
     if (token) {
       fetchUserHistory();
     } else {
@@ -138,7 +149,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-slate-800 font-sans selection:bg-[#0B5C66]/30">
       <Toaster theme="light" position="top-center" />
-      
+
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-10">
@@ -164,7 +175,7 @@ export default function App() {
 
           <div className="flex items-center gap-4 text-[#0B5C66]">
             {user ? (
-              <div 
+              <div
                 onClick={() => setView('profile')}
                 className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-full transition-all ${view === 'profile' ? 'bg-teal-50 ring-1 ring-[#0B5C66]/20' : 'hover:bg-gray-50'}`}
               >
@@ -239,7 +250,7 @@ export default function App() {
           {view === 'result' && currentResult && (
             <motion.div key="result-view" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-6">
               <button onClick={() => setView('camera')} className="text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-2 text-sm font-medium">← Volver a analizar</button>
-              <AnalysisResult result={currentResult} />
+              <AnalysisResult result={currentResult} allProducts={products} />
             </motion.div>
           )}
 
@@ -260,19 +271,19 @@ export default function App() {
             </motion.div>
           )}
 
-            {view === 'login' && <Login onLogin={handleLogin} onSwitchToRegister={() => setView('register')} />}
-            {view === 'register' && <Register onRegisterSuccess={() => setView('login')} onSwitchToLogin={() => setView('login')} />}
-            {view === 'profile' && user && token && (
-              <Profile 
-                user={user} 
-                token={token} 
-                onLogout={handleLogout} 
-                onUpdate={handleUpdateUser} 
-                history={userHistory}
-                onSelectHistory={handleSelectHistory}
-                onDeleteHistory={handleDeleteHistory}
-              />
-            )}        </AnimatePresence>
+          {view === 'login' && <Login onLogin={handleLogin} onSwitchToRegister={() => setView('register')} />}
+          {view === 'register' && <Register onRegisterSuccess={() => setView('login')} onSwitchToLogin={() => setView('login')} />}
+          {view === 'profile' && user && token && (
+            <Profile
+              user={user}
+              token={token}
+              onLogout={handleLogout}
+              onUpdate={handleUpdateUser}
+              history={userHistory}
+              onSelectHistory={handleSelectHistory}
+              onDeleteHistory={handleDeleteHistory}
+            />
+          )}        </AnimatePresence>
       </main>
 
       <footer className="border-t border-gray-200 py-12 mt-20 bg-white">

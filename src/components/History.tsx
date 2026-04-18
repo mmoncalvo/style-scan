@@ -10,7 +10,6 @@ interface HistoryProps {
 }
 
 export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete }) => {
-  console.log("🚀 ~ History ~ history:", history)
   if (history.length === 0) return null;
 
   return (
