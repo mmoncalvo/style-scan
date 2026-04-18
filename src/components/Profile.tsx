@@ -17,14 +17,14 @@ interface ProfileProps {
   onDeleteHistory: (id: string) => void;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ 
-  user, 
-  token, 
-  onLogout, 
-  onUpdate, 
-  history, 
-  onSelectHistory, 
-  onDeleteHistory 
+export const Profile: React.FC<ProfileProps> = ({
+  user,
+  token,
+  onLogout,
+  onUpdate,
+  history,
+  onSelectHistory,
+  onDeleteHistory
 }) => {
   const [formData, setFormData] = useState({
     fullName: user.fullName || '',
@@ -156,10 +156,10 @@ export const Profile: React.FC<ProfileProps> = ({
         </div>
 
         {history.length > 0 ? (
-          <History 
-            history={history} 
-            onSelect={onSelectHistory} 
-            onDelete={onDeleteHistory} 
+          <History
+            history={history}
+            onSelect={onSelectHistory}
+            onDelete={onDeleteHistory}
           />
         ) : (
           <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm border-dashed">
