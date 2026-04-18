@@ -43,12 +43,18 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
   // Get 3 areas that need the most attention (lowest values)
   const areasToImprove = [...metrics].sort((a, b) => a.value - b.value).filter((a: any) => a.value < 90);
 
-  // Recommend products based on analysis results
-  const recommendedProducts = areasToImprove.flatMap(area => {
+  const recommendations = React.useMemo(() => {
     return allProducts
-      .filter((p: any) => p.target === area.targetKey)
-      .slice(0, 2);
-  }).slice(0, 6);
+      .map(product => {
+        const metric = metrics.find(m => m.targetKey === product.target);
+        const score = metric ? metric.value : 100;
+        // Relevance: prioritize lower metric score (needs more help)
+        return { ...product, relevance: 100 - score };
+      })
+      .filter(p => p.relevance > 10) // Only show if there's a need (score < 90)
+      .sort((a, b) => b.relevance - a.relevance)
+      .slice(0, 6);
+  }, [allProducts, metrics]);
 
   const handleDownloadPDF = async () => {
     const doc = new jsPDF();
@@ -117,19 +123,16 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
     doc.setFont('helvetica', 'bold');
     doc.text('Recomendaciones Personalizadas', 20, finalY);
 
-    const recommendations = areasToImprove.slice(0, 3).map(area => {
-      const prods = allProducts.filter((p: any) => p.target === area.targetKey).slice(0, 1);
-      return [
-        area.label,
-        prods.length > 0 ? prods[0].title : 'Tratamiento específico',
-        prods.length > 0 ? prods[0].description.substring(0, 80) + '...' : '-'
-      ];
-    });
+    const recTableData = recommendations.map(p => [
+      p.title,
+      metrics.find(m => m.targetKey === p.target)?.label || 'Tratamiento',
+      `$${p.price.toFixed(2)}`
+    ]);
 
     autoTable(doc, {
       startY: finalY + 5,
-      head: [['Área de Mejora', 'Producto Recomendado', 'Descripción']],
-      body: recommendations,
+      head: [['Producto', 'Objetivo', 'Precio']],
+      body: recTableData,
       headStyles: { fillColor: primaryColor as [number, number, number] },
       styles: { fontSize: 10 },
       margin: { left: 20, right: 20 }
@@ -241,7 +244,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendedProducts.slice(0, 6).map(product => {
+              {recommendations.map(product => {
                 const relatedMetric = metrics.find(m => m.targetKey === product.target);
                 return (
                   <motion.div
@@ -297,7 +300,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
               <X className="w-5 h-5" />
             </button>
             <div className="aspect-video bg-gray-50 dark:bg-slate-800 relative shrink-0 max-h-[300px] flex items-center justify-center p-4">
-              <img src={selectedProduct.image} alt={selectedProduct.title} className="w-full h-full object-contain" />
+              <img src={selectedProduct.images?.[0]} alt={selectedProduct.title} className="w-full h-full object-contain" />
             </div>
             <div className="p-8 overflow-y-auto">
               <div className="flex items-start justify-between gap-4 mb-2">
