@@ -271,7 +271,6 @@ export default function App() {
               </div>
             </motion.div>
           )}
-
           {view === 'result' && currentResult && (
             <motion.div key="result-view" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-6">
               <button onClick={() => setView('camera')} className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors flex items-center gap-2 text-sm font-medium">← Volver a analizar</button>
