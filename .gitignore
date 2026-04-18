@@ -1,3 +1,4 @@
+database.sqlite
 node_modules/
 build/
 dist/
@@ -7,3 +8,4 @@ uploads/
 *.log
 .env*
 !.env.example
+!database.init.sqlite
