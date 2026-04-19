@@ -26,10 +26,6 @@ export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete })
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-4 px-2">
-        <Clock className="w-5 h-5" />
-        <h3 className="font-bold uppercase tracking-wider text-sm">Historial Reciente</h3>
-      </div>
       <div className="grid gap-4">
         {sortedHistory.map((item, idx) => (
           <motion.div

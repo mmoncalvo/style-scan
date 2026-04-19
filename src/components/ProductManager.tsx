@@ -46,15 +46,18 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
         )}
       </div>
       <div className="min-w-0 space-y-2">
-        <div className="flex items-center gap-4">
+
+        <div className="flex items-center gap-8">
           <h4 className="font-bold text-slate-800 dark:text-white truncate transition-colors duration-300">{product.title}</h4>
-          <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
-            {targets[product.target]}
-          </span>
-          <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
-            <span>rango:</span>
-            <span>{product.range}</span>
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
+              {targets[product.target]}
+            </span>
+            <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
+              <span>rango:</span>
+              <span>{product.range}</span>
+            </span>
+          </div>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5 transition-colors duration-300">{product.description}</p>
         <span className="text-[#0B5C66] dark:text-teal-400 font-black mt-1 transition-colors duration-300">${product.price.toFixed(2)}</span>

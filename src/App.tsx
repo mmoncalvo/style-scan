@@ -248,7 +248,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-8">
         <AnimatePresence mode="wait">
           {view === 'camera' && (
             <motion.div key="camera-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
@@ -279,9 +279,13 @@ export default function App() {
           )}
 
           {view === 'history' && (
-            <motion.div key="history-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="max-w-4xl mx-auto">
-              <div className="text-center mb-12 mt-8">
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Historial de Análisis</h2>
+            <motion.div key="history-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="mx-auto">
+              <div className="text-center my-6 mb-12 space-y-4">
+                <div className="flex items-center justify-center">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <HistoryIcon className="w-6 h-6 text-[#0B5C66] dark:text-teal-400" />Historial de Análisis
+                  </h3>
+                </div>
                 <p className="text-slate-500 dark:text-slate-400">Consulta los resultados de los últimos análisis faciales.</p>
               </div>
               <History history={guestHistory} onSelect={handleSelectHistory} onDelete={handleDeleteHistory} />
