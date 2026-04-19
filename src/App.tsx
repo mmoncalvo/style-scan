@@ -202,7 +202,7 @@ export default function App() {
             {user ? (
               <div
                 onClick={() => setView('profile')}
-                className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-full transition-all ${view === 'profile' ? 'bg-teal-50 dark:bg-teal-900/20 ring-1 ring-[#0B5C66]/20' : 'hover:bg-gray-50 dark:hover:bg-slate-800'}`}
+                className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-full transition-all ${view === 'profile' ? 'bg-teal-50 dark:bg-teal-600/20 ring-1 ring-teal-500/20 dark:ring-teal-900' : 'hover:bg-gray-50 dark:hover:bg-slate-800'}`}
               >
                 <div className="w-8 h-8 rounded-full bg-[#0B5C66] text-white flex items-center justify-center text-xs font-bold">
                   {user.username.charAt(0).toUpperCase()}

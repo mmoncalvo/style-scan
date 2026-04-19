@@ -195,7 +195,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
               <h2 className="text-2xl font-bold text-[#0B5C66] dark:text-teal-400">Métricas Detalladas</h2>
               <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Análisis multiespectral mediante IA avanzada.</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-10">
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-12">
               {metrics.map((metric, idx) => (
                 <motion.div
                   key={metric.label}

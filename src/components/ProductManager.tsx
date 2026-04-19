@@ -53,9 +53,8 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
             <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
               {targets[product.target]}
             </span>
-            <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
-              <span>rango:</span>
-              <span>{product.range}</span>
+            <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-600/50 text-zinc-800 dark:text-zinc-200 text-[10px] font-black uppercase tracking-widest rounded-md space-x-1">
+              <span>rango</span><span>{product.range}</span>
             </span>
           </div>
         </div>
