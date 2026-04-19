@@ -98,7 +98,7 @@ export default function App() {
     setUser(newUser);
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
-    setView('camera');
+    setView('profile');
   };
 
   const handleLogout = () => {
@@ -171,7 +171,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-10">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('camera')}>
-              <h1 className="text-xl font-black tracking-widest text-slate-900 dark:text-white uppercase">Derma AI</h1>
+              <h1 className="text-xl font-black tracking-widest text-slate-900 dark:text-white text-nowrap uppercase">Derma AI</h1>
             </div>
 
             <nav className="hidden md:flex gap-8">
@@ -212,9 +212,9 @@ export default function App() {
             ) : (
               <button
                 onClick={() => setView('login')}
-                className="text-sm font-bold px-5 py-2 rounded-full border border-[#0B5C66] dark:border-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all"
+                className="text-sm font-bold p-2 rounded-full bg-teal-100/50 dark:bg-teal-900/50 hover:bg-teal-50 dark:hover:bg-teal-900/20 border border-teal-700/30 dark:border-teal-500/50 transition-all"
               >
-                Iniciar Sesión
+                <UserIcon className="w-5 h-5 block" />
               </button>
             )}
             <div className="md:hidden w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer transition-colors" onClick={() => setIsMobileMenuOpen(true)}>
@@ -248,13 +248,13 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8">
         <AnimatePresence mode="wait">
           {view === 'camera' && (
             <motion.div key="camera-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
-              <div className="text-center max-w-2xl mx-auto mt-8">
-                <h2 className="text-3xl font-bold text-slate-800 dark:text-white mb-4">Analiza tu piel en segundos</h2>
-                <p className="text-slate-500 dark:text-slate-400">Captura una foto o sube una imagen de tu rostro. Nuestra IA analizará múltiples parámetros para darte un reporte detallado.</p>
+              <div className="text-center max-w-4xl mx-auto mt-8">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Analiza tu piel en segundos</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Captura una foto o sube una imagen de tu rostro. Nuestra IA analizará múltiples parámetros para darte un reporte detallado.</p>
               </div>
               <div className="flex justify-center gap-4">
                 <button onClick={() => setInputMethod('camera')} className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${inputMethod === 'camera' ? 'bg-[#0B5C66] text-white border-[#0B5C66] shadow-lg shadow-[#0B5C66]/20' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'}`}><CameraIcon className="w-4 h-4" /> Usar Cámara</button>

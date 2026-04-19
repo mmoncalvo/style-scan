@@ -1,47 +1,57 @@
-import express from "express";
+import { sequelize, isDbReady, setDbReady } from './src/config/database.js';
 import { createServer as createViteServer } from "vite";
-import path from "path";
-import dotenv from "dotenv";
-import fs from "fs";
-import { execSync } from "child_process";
-import https from "https";
-
-import { sequelize, isDbReady, setDbReady, User } from './src/config/database.js';
 import apiRoutes from './src/routes/api.js';
-import bcrypt from 'bcryptjs';
+import { execSync } from "child_process";
+import express from "express";
+import dotenv from "dotenv";
+import logger from 'morgan';
+import https from "https";
+import chalk from 'chalk';
+import path from "path";
+import fs from "fs";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
-const app = express();
+const HTTPS_PORT = process.env.HTTPS_PORT ? parseInt(process.env.HTTPS_PORT, 10) : 3001;
+const certPath = path.join(process.cwd(), 'server.cert');
+const keyPath = path.join(process.cwd(), 'server.key');
 const PORT = 3000;
 
-// Ensure uploads directory exists
-const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
-try {
-  if (!fs.existsSync(UPLOADS_DIR)) {
-    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-  }
-  fs.accessSync(UPLOADS_DIR, fs.constants.W_OK);
-  console.log(">>> [init] Uploads directory is writable.");
-} catch (err) {
-  console.error(">>> [init] Error with uploads directory:", err);
-}
+const app = express();
 
 async function startServer() {
-  console.log(">>> [startServer] Initializing...");
+  console.log(chalk.bgCyanBright(chalk.black(">>> [init] Initializing...")));
+  console.log(chalk.cyan(`>>> [init] Environment: ${process.env.NODE_ENV || 'development'}`));
 
+  // Generate certs automatically if they don't exist
+  if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
+    console.log(chalk.yellow(">>> [startServer] HTTPS certificates missing. Generating self-signed certificates..."));
+    try {
+      execSync('openssl req -nodes -new -x509 -keyout server.key -out server.cert -days 365 -subj "/CN=localhost"');
+      console.log(chalk.green(">>> [startServer] Certificates generated successfully."));
+    } catch (e: any) {
+      console.error(chalk.red(">>> [startServer] Failed to generate certificates:"), e.message);
+    }
+  }
+  // Ensure uploads directory exists
+  const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
+  try {
+    if (!fs.existsSync(UPLOADS_DIR)) {
+      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    }
+    fs.accessSync(UPLOADS_DIR, fs.constants.W_OK);
+    console.log(chalk.cyan(">>> [init] Uploads directory is writable."));
+  } catch (err) {
+    console.error(chalk.red(">>> [init] Error with uploads directory:"), err);
+  }
+
+  app.use(logger("dev"));
   app.use(express.json());
   app.use('/uploads', express.static('uploads'));
   app.use('/data/images', express.static(path.join(process.cwd(), 'data/images')));
 
-  // Middleware to check DB readiness
-  app.use((req, res, next) => {
-    if (!isDbReady() && req.path.startsWith('/api') && req.path !== '/api/health') {
-      console.log(`>>> [middleware] DB not ready, blocking request to ${req.path}`);
-      return res.status(503).json({ error: "Database is initializing, please try again in a moment." });
-    }
-    next();
-  });
+  // API Routes
+  app.use('/api', apiRoutes);
 
   // Health check for the proxy
   app.get("/api/health", async (req, res) => {
@@ -60,15 +70,19 @@ async function startServer() {
     });
   });
 
-  // API Routes
-  app.use('/api', apiRoutes);
+  // Middleware to check DB readiness
+  app.use((req, res, next) => {
+    if (!isDbReady() && req.path.startsWith('/api') && req.path !== '/api/health') {
+      console.log(`>>> [middleware] DB not ready, blocking request to ${req.path}`);
+      return res.status(503).json({ error: "Database is initializing, please try again in a moment." });
+    }
+    next();
+  });
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     try {
-      console.log(">>> [startServer] Starting Vite in middleware mode...");
-      const keyPath = path.join(process.cwd(), 'server.key');
-      const certPath = path.join(process.cwd(), 'server.cert');
+      console.log(chalk.cyan(">>> [Vite] Starting Vite in middleware mode..."));
 
       const viteServerConfig: any = {
         middlewareMode: true
@@ -86,9 +100,9 @@ async function startServer() {
         appType: "spa",
       });
       app.use(vite.middlewares);
-      console.log(">>> [startServer] Vite middleware attached.");
+      console.log(chalk.cyan(">>> [Vite] Vite middleware attached."));
     } catch (viteError) {
-      console.error(">>> [startServer] Failed to start Vite middleware:", viteError);
+      console.error(chalk.red(">>> [Vite] Failed to start Vite middleware:"), viteError);
     }
   } else {
     const distPath = path.join(process.cwd(), 'dist');
@@ -98,57 +112,43 @@ async function startServer() {
     });
   }
 
-  // Setup HTTPS
-  const HTTPS_PORT = process.env.HTTPS_PORT ? parseInt(process.env.HTTPS_PORT, 10) : 3001;
-  const keyPath = path.join(process.cwd(), 'server.key');
-  const certPath = path.join(process.cwd(), 'server.cert');
-
-  // Generate certs automatically if they don't exist
-  if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-    console.log(">>> [startServer] HTTPS certificates missing. Generating self-signed certificates...");
+  // Initialize database in the background
+  (async () => {
     try {
-      execSync('openssl req -nodes -new -x509 -keyout server.key -out server.cert -days 365 -subj "/CN=localhost"');
-      console.log(">>> [startServer] Certificates generated successfully.");
-    } catch (e: any) {
-      console.error(">>> [startServer] Failed to generate certificates:", e.message);
-    }
-  }
+      console.log(chalk.bgYellowBright(chalk.black(">>> [db] Authenticating database")));
+      await sequelize.authenticate();
+      console.log(chalk.yellow(">>> [db] Database connection established."));
+      await sequelize.sync({ alter: true });
+      console.log(chalk.yellow(">>> [db] Database synced with schema changes."));
+      setDbReady(true);
 
-  // Start listening on HTTP IMMEDIATELY
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`>>> [startServer] HTTP Server is listening on port ${PORT}`);
-    console.log(`>>> [startServer] Environment: ${process.env.NODE_ENV || 'development'}`);
-
-    // Initialize database in the background
-    (async () => {
-      try {
-        console.log(">>> [db] Authenticating database...");
-        await sequelize.authenticate();
-        console.log(">>> [db] Database connection established.");
-        await sequelize.sync({ alter: true });
-        console.log(">>> [db] Database synced with schema changes.");
-
-        setDbReady(true);
-      } catch (err) {
-        console.error(">>> [db] Unable to connect to the database:", err);
+      console.log(chalk.bgGreenBright(chalk.black(">>> [startServer] Initializing servers...")));
+      // Start listening on HTTPS
+      if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+        try {
+          const httpsOptions = {
+            key: fs.readFileSync(keyPath),
+            cert: fs.readFileSync(certPath)
+          };
+          https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", () => {
+            console.log(chalk.green(`>>> [startServer] HTTPS Server is listening on port ${HTTPS_PORT}`));
+          });
+        } catch (err) {
+          console.error(chalk.red(">>> [startServer] Failed to start HTTPS server:"), err);
+        }
       }
-    })();
-  });
 
-  // Start listening on HTTPS
-  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
-    try {
-      const httpsOptions = {
-        key: fs.readFileSync(keyPath),
-        cert: fs.readFileSync(certPath)
-      };
-      https.createServer(httpsOptions, app).listen(HTTPS_PORT, "0.0.0.0", () => {
-        console.log(`>>> [startServer] HTTPS Server is listening on port ${HTTPS_PORT}`);
+      // Start listening on HTTP IMMEDIATELY
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(chalk.green(`>>> [startServer] HTTP Server is listening on port ${PORT}`));
       });
+
+
     } catch (err) {
-      console.error(">>> [startServer] Failed to start HTTPS server:", err);
+      console.error(chalk.red(">>> [db] Unable to connect to the database:"), err);
     }
-  }
+  })();
+
 }
 
 process.on('unhandledRejection', (reason, promise) => {

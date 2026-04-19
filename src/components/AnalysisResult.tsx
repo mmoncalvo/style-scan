@@ -42,11 +42,11 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
 
   const recommendations = React.useMemo(() => {
     const matches = allProducts.filter(product => {
-        const metric = metrics.find(m => m.targetKey === product.target);
-        if (!metric) return false;
-        const diff = Math.abs(metric.value - (product.range || 0));
-        return diff <= 30; 
-      })
+      const metric = metrics.find(m => m.targetKey === product.target);
+      if (!metric) return false;
+      const diff = Math.abs(metric.value - (product.range || 0));
+      return diff <= 30;
+    })
       .sort((a, b) => {
         const diffA = Math.abs((metrics.find(m => m.targetKey === a.target)?.value || 0) - (a.range || 0));
         const diffB = Math.abs((metrics.find(m => m.targetKey === b.target)?.value || 0) - (b.range || 0));
@@ -134,7 +134,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
       className="max-w-7xl mx-auto"
     >
       {result.isMock && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-center gap-3"

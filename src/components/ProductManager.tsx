@@ -10,15 +10,28 @@ interface ProductManagerProps {
 }
 
 // 1. Memoized Product Item to avoid re-renders
-const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Product, onEdit: (p: Product) => void, onDelete: (id: string) => void }) => {
+const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Product, onEdit: (p: Product) => void, onDelete: (id: number) => void }) => {
+  const targets = {
+    spots: "Puntos",
+    wrinkles: "Arrugas",
+    texture: "Textura",
+    darkCircles: "Ojeras",
+    pores: "Poros",
+    redness: "Enrojecimiento",
+    oiliness: "Grasitud",
+    moisture: "Humedad",
+    eyebag: "Bolsas",
+    droopyEyelid: "Párpado Caído",
+    acne: "Acné"
+  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm flex items-center gap-4 group transition-colors duration-300"
+      className="p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm flex items-center gap-8 group transition-colors duration-300"
     >
-      <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 flex-shrink-0 relative transition-colors duration-300">
+      <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 relative transition-colors duration-300 mb-auto">
         {product.images && product.images.length > 0 ? (
           <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
         ) : (
@@ -32,17 +45,22 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
           </div>
         )}
       </div>
-      <div className="flex-grow min-w-0">
-        <div className="flex items-center gap-2">
+      <div className="min-w-0 space-y-2">
+        <div className="flex items-center gap-4">
           <h4 className="font-bold text-slate-800 dark:text-white truncate transition-colors duration-300">{product.title}</h4>
-          <span className="px-2 py-0.5 bg-teal-50 dark:bg-teal-900/20 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
-            {product.target}
+          <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
+            {targets[product.target]}
+          </span>
+          <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
+            <span>rango:</span>
+            <span>{product.range}</span>
           </span>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5 transition-colors duration-300">{product.description}</p>
-        <p className="text-[#0B5C66] dark:text-teal-400 font-black mt-1 transition-colors duration-300">${product.price.toFixed(2)}</p>
+        <span className="text-[#0B5C66] dark:text-teal-400 font-black mt-1 transition-colors duration-300">${product.price.toFixed(2)}</span>
       </div>
-      <div className="flex items-center gap-1">
+
+      <div className="flex items-center gap-1 ms-auto">
         <button
           onClick={() => onEdit(product)}
           className="p-2 text-slate-400 dark:text-slate-500 hover:text-[#0B5C66] dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-all"
@@ -80,6 +98,7 @@ const ProductForm = ({
     ...initialData,
     range: initialData.range || 0
   });
+
   const [isUploading, setIsUploading] = useState(false);
 
   const targetOptions = [
@@ -150,8 +169,8 @@ const ProductForm = ({
         });
         toast.success('Producto actualizado correctamente');
       } else {
-        const newId = `prod_${Date.now()}`;
-        await axios.post('/api/products', { ...formData, id: newId }, {
+
+        await axios.post('/api/products', { ...formData }, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Producto creado correctamente');
@@ -211,19 +230,19 @@ const ProductForm = ({
             </div>
           </div>
           <div className="space-y-3">
-             <div className="flex items-center justify-between ml-1">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Rango de Aplicación (0-100)</label>
-                <span className="text-sm font-bold text-[#0B5C66] dark:text-teal-400">{formData.range || 0}</span>
-             </div>
-             <input
-                type="range"
-                min="0"
-                max="100"
-                step="10"
-                value={formData.range || 0}
-                onChange={(e) => setFormData({ ...formData, range: parseInt(e.target.value) })}
-                className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#0B5C66] dark:accent-teal-500"
-             />
+            <div className="flex items-center justify-between ml-1">
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Rango de Aplicación (0-100)</label>
+              <span className="text-sm font-bold text-[#0B5C66] dark:text-teal-400">{formData.range || 0}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="10"
+              value={formData.range || 0}
+              onChange={(e) => setFormData({ ...formData, range: parseInt(e.target.value) })}
+              className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#0B5C66] dark:accent-teal-500"
+            />
           </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Descripción</label>
@@ -344,7 +363,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
     fetchProducts();
   }, []);
 
-  const handleDelete = useCallback(async (id: string) => {
+  const handleDelete = useCallback(async (id: number) => {
     toast('¿Estás seguro de que deseas eliminar este producto?', {
       description: 'Esta acción no se puede deshacer.',
       icon: <AlertCircle className="w-5 h-5 text-red-500" />,
@@ -374,14 +393,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
 
   const filteredProducts = useMemo(() => {
     return products
-      .filter(p =>
-        p.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        (filterTarget === '' || p.target === filterTarget)
-      )
-      .sort((a, b) => {
-        // IDs are generated as prod_{timestamp}, so sorting by ID descending puts newest first
-        return b.id.localeCompare(a.id);
-      });
+      .filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()) && (filterTarget === '' || p.target === filterTarget));
   }, [products, searchTerm, filterTarget]);
 
 
@@ -428,7 +440,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
         </div>
       </div>
 
-      <div className="grid gap-4 overflow-x-scroll min-h-100">
+      <div className="grid grid-cols-1 gap-4 overflow-x-scroll md:overflow-auto min-h-100">
         <AnimatePresence mode="popLayout">
           {filteredProducts.map((product) => (
             <ProductItem

@@ -1,7 +1,7 @@
 import { Sequelize, DataTypes } from 'sequelize';
-import path from 'path';
-import crypto from 'crypto';
 import { createRequire } from 'module';
+import crypto from 'crypto';
+import path from 'path';
 
 const require = createRequire(import.meta.url);
 const sqlite3 = require("sqlite3");
@@ -68,8 +68,8 @@ export const Analysis = sequelize.define('Analysis', {
   droopyEyelid: DataTypes.INTEGER,
   acne: DataTypes.INTEGER,
   imageUrl: DataTypes.STRING,
-  rawResponse: DataTypes.TEXT('long'),
-  masks: DataTypes.TEXT('long'),
+  rawResponse: DataTypes.TEXT,
+  masks: DataTypes.TEXT,
   isMock: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
@@ -77,10 +77,6 @@ export const Analysis = sequelize.define('Analysis', {
 });
 
 export const Product = sequelize.define('Product', {
-  id: {
-    type: DataTypes.STRING,
-    primaryKey: true
-  },
   target: {
     type: DataTypes.STRING,
     allowNull: false

@@ -149,8 +149,8 @@ router.get("/products", async (req: any, res: any) => {
     const { target } = req.query;
     const where: any = {};
     if (target) where.target = target;
-    
-    const products = await Product.findAll({ where, order: [['title', 'ASC']] });
+
+    const products = await Product.findAll({ where, order: [['updatedAt', 'DESC']] });
     const parsedProducts = products.map((p: any) => {
       const json = p.toJSON();
       try {
@@ -183,12 +183,12 @@ router.put("/products/:id", authenticate, isAdmin, async (req: any, res: any) =>
   try {
     const product: any = await Product.findByPk(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });
-    
+
     const data = { ...req.body };
     if (Array.isArray(data.images)) {
       data.images = JSON.stringify(data.images);
     }
-    
+
     await product.update(data);
     res.json(product);
   } catch (error: any) {
@@ -428,7 +428,7 @@ router.get("/my-history", authenticate, async (req: any, res: any) => {
     console.log(`>>> [api/my-history] Fetching history for user ${req.user.id}...`);
     const history = await Analysis.findAll({
       where: { userId: req.user.id },
-      order: [['createdAt', 'DESC']],
+      order: [['updatedAt', 'DESC']],
       limit: 50
     });
     const parsedHistory = history.map((record: any) => {
