@@ -97,6 +97,11 @@ export const Product = sequelize.define('Product', {
     type: DataTypes.FLOAT,
     allowNull: false
   },
+  range: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
   images: {
     type: DataTypes.TEXT,
     allowNull: false,

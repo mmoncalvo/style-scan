@@ -80,9 +80,10 @@ async function setup() {
       console.log(">>> [setup] Seeding products from data/products.json...");
       const productsData = JSON.parse(fs.readFileSync(PRODUCTS_DATA_PATH, 'utf-8'));
       for (const data of productsData) {
-        // Adapt data from image to images array
+        // Adapt data from image to images array and assign random range
         const productData = {
           ...data,
+          range: Math.floor(Math.random() * 11) * 10, // Random value 0, 10, ..., 100
           images: JSON.stringify([data.image])
         };
         delete productData.image;

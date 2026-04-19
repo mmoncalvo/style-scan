@@ -21,6 +21,9 @@ export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete })
 
   if (history.length === 0) return null;
 
+  // Ensure items are sorted by date descending for UI consistency
+  const sortedHistory = [...history].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 mb-4 px-2">
@@ -28,7 +31,7 @@ export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete })
         <h3 className="font-bold uppercase tracking-wider text-sm">Historial Reciente</h3>
       </div>
       <div className="grid gap-4">
-        {history.map((item, idx) => (
+        {sortedHistory.map((item, idx) => (
           <motion.div
             key={item.id}
             initial={{ opacity: 0, x: -20 }}

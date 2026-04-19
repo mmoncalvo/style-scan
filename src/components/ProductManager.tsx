@@ -76,12 +76,24 @@ const ProductForm = ({
   onSave: () => void,
   token: string
 }) => {
-  const [formData, setFormData] = useState<Partial<Product>>(initialData);
+  const [formData, setFormData] = useState<Partial<Product>>({
+    ...initialData,
+    range: initialData.range || 0
+  });
   const [isUploading, setIsUploading] = useState(false);
 
-  const targets = [
-    'spots', 'wrinkles', 'texture', 'darkCircles', 'pores',
-    'redness', 'oiliness', 'moisture', 'eyebag', 'droopyEyelid', 'acne'
+  const targetOptions = [
+    { value: 'spots', label: 'Puntos' },
+    { value: 'wrinkles', label: 'Arrugas' },
+    { value: 'texture', label: 'Textura' },
+    { value: 'darkCircles', label: 'Ojeras' },
+    { value: 'pores', label: 'Poros' },
+    { value: 'redness', label: 'Enrojecimiento' },
+    { value: 'oiliness', label: 'Grasitud' },
+    { value: 'moisture', label: 'Humedad' },
+    { value: 'eyebag', label: 'Bolsas' },
+    { value: 'droopyEyelid', label: 'Párpado Caído' },
+    { value: 'acne', label: 'Acné' }
   ];
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,6 +102,7 @@ const ProductForm = ({
 
     setIsUploading(true);
     const form = new FormData();
+    // Enviar cada archivo con la clave 'productImages' para que coincida con el backend
     for (let i = 0; i < files.length; i++) {
       form.append('productImages', files[i]);
     }
@@ -101,12 +114,14 @@ const ProductForm = ({
           Authorization: `Bearer ${token}`
         }
       });
+      // Aseguramos que los caminos devueltos por el servidor se agreguen correctamente
       setFormData(prev => ({
         ...prev,
         images: [...(prev.images || []), ...response.data.paths]
       }));
       toast.success('Imágenes subidas correctamente');
     } catch (err) {
+      console.error("Error en subida:", err);
       toast.error('Error al subir imágenes');
     } finally {
       setIsUploading(false);
@@ -153,15 +168,15 @@ const ProductForm = ({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden my-8 border border-transparent dark:border-slate-800 transition-colors duration-300"
+        className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg my-auto border border-transparent dark:border-slate-800 transition-colors duration-300 max-h-[95vh] flex flex-col"
       >
-        <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-[#0B5C66] dark:bg-teal-900/40 text-white">
-          <h3 className="font-bold">{isEditing ? 'Editar Producto' : 'Nuevo Producto'}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-            <X className="w-5 h-5" />
+        <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-[#0B5C66] dark:bg-teal-900/40 text-white shrink-0">
+          <h3 className="font-bold text-sm">{isEditing ? 'Editar Producto' : 'Nuevo Producto'}</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-full transition-colors">
+            <X className="w-4 h-4" />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Título</label>
             <input
@@ -180,7 +195,7 @@ const ProductForm = ({
                 onChange={(e) => setFormData({ ...formData, target: e.target.value })}
                 className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
               >
-                {targets.map(t => <option key={t} value={t}>{t}</option>)}
+                {targetOptions.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <div className="space-y-1">
@@ -194,6 +209,21 @@ const ProductForm = ({
                 className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
               />
             </div>
+          </div>
+          <div className="space-y-3">
+             <div className="flex items-center justify-between ml-1">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Rango de Aplicación (0-100)</label>
+                <span className="text-sm font-bold text-[#0B5C66] dark:text-teal-400">{formData.range || 0}</span>
+             </div>
+             <input
+                type="range"
+                min="0"
+                max="100"
+                step="10"
+                value={formData.range || 0}
+                onChange={(e) => setFormData({ ...formData, range: parseInt(e.target.value) })}
+                className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#0B5C66] dark:accent-teal-500"
+             />
           </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Descripción</label>
@@ -343,11 +373,17 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
   }, []);
 
   const filteredProducts = useMemo(() => {
-    return products.filter(p =>
-      p.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterTarget === '' || p.target === filterTarget)
-    );
+    return products
+      .filter(p =>
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        (filterTarget === '' || p.target === filterTarget)
+      )
+      .sort((a, b) => {
+        // IDs are generated as prod_{timestamp}, so sorting by ID descending puts newest first
+        return b.id.localeCompare(a.id);
+      });
   }, [products, searchTerm, filterTarget]);
+
 
   return (
     <div className="space-y-6">

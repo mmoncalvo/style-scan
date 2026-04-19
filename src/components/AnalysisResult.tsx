@@ -43,17 +43,25 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
   // Get 3 areas that need the most attention (lowest values)
   const areasToImprove = [...metrics].sort((a, b) => a.value - b.value).filter((a: any) => a.value < 90);
 
+  // Recommend products based on analysis results
   const recommendations = React.useMemo(() => {
-    return allProducts
-      .map(product => {
+    const matches = allProducts.filter(product => {
         const metric = metrics.find(m => m.targetKey === product.target);
-        const score = metric ? metric.value : 100;
-        // Relevance: prioritize lower metric score (needs more help)
-        return { ...product, relevance: 100 - score };
+        if (!metric) return false;
+        
+        // Define match: product is relevant if metric value is close to product range (±30)
+        const diff = Math.abs(metric.value - (product.range || 0));
+        return diff <= 30; 
       })
-      .filter(p => p.relevance > 10) // Only show if there's a need (score < 90)
-      .sort((a, b) => b.relevance - a.relevance)
-      .slice(0, 6);
+      .sort((a, b) => {
+        // Sort by best match (smallest difference)
+        const diffA = Math.abs((metrics.find(m => m.targetKey === a.target)?.value || 0) - (a.range || 0));
+        const diffB = Math.abs((metrics.find(m => m.targetKey === b.target)?.value || 0) - (b.range || 0));
+        return diffA - diffB;
+      });
+
+    // If no matches, return some products so the UI doesn't look empty
+    return matches.length > 0 ? matches.slice(0, 6) : allProducts.slice(0, 6);
   }, [allProducts, metrics]);
 
   const handleDownloadPDF = async () => {
@@ -153,6 +161,19 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
       animate={{ opacity: 1, y: 0 }}
       className="max-w-7xl mx-auto"
     >
+      {result.isMock && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-center gap-3"
+        >
+          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+          <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+            Estos son datos de ejemplo. La API no está configurada para realizar análisis reales.
+          </p>
+        </motion.div>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-8">
 
         {/* LEFT COLUMN */}

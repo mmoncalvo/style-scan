@@ -13,6 +13,7 @@ export interface Product {
   description: string;
   price: number;
   images: string[];
+  range: number;
 }
 
 export interface SkinAnalysis {
