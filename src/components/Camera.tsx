@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Camera as CameraIcon, RefreshCw, Check, X, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 
 interface CameraProps {
   onCapture: (blob: Blob) => void;
@@ -14,6 +15,139 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Live Diagnostics State
+  const [lightingGood, setLightingGood] = useState(false);
+  const [facePositionGood, setFacePositionGood] = useState(false);
+  const [lookStraightGood, setLookStraightGood] = useState(false);
+  
+  const landmarkerRef = useRef<FaceLandmarker | null>(null);
+  const requestRef = useRef<number>();
+  const lastVideoTimeRef = useRef(-1);
+
+  useEffect(() => {
+    let active = true;
+    const initLandmarker = async () => {
+      try {
+        const vision = await FilesetResolver.forVisionTasks(
+          "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+        );
+        if (!active) return;
+        const landmarker = await FaceLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+            delegate: "GPU"
+          },
+          outputFaceBlendshapes: true,
+          outputFacialTransformationMatrixes: true,
+          runningMode: "VIDEO",
+          numFaces: 1
+        });
+        if (!active) {
+            landmarker.close();
+            return;
+        }
+        landmarkerRef.current = landmarker;
+      } catch (e) {
+        console.error("Failed to initialize face landmarker:", e);
+      }
+    };
+    initLandmarker();
+    return () => {
+      active = false;
+      if (landmarkerRef.current) {
+        landmarkerRef.current.close();
+      }
+    };
+  }, []);
+
+  const processFrame = useCallback(() => {
+    if (!videoRef.current || !landmarkerRef.current || capturedImage) return;
+    
+    const video = videoRef.current;
+    
+    if (video.readyState >= 2 && video.currentTime !== lastVideoTimeRef.current) {
+      lastVideoTimeRef.current = video.currentTime;
+      
+      // 1. Lighting Check
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (ctx) {
+           const sampleSize = 64;
+           if (canvas.width !== sampleSize) {
+               canvas.width = sampleSize;
+               canvas.height = sampleSize;
+           }
+           ctx.drawImage(video, 0, 0, sampleSize, sampleSize);
+           const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+           const data = imageData.data;
+           let sum = 0;
+           for(let i=0; i<data.length; i+=4) {
+             sum += (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114);
+           }
+           const avg = sum / (sampleSize * sampleSize);
+           setLightingGood(avg > 70 && avg < 230); // Not too dark, not completely blown out
+        }
+      }
+
+      // 2. Face Position and Look Straight
+      try {
+          const results = landmarkerRef.current.detectForVideo(video, performance.now());
+          
+          if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+            const landmarks = results.faceLandmarks[0];
+            
+            let minX = 1, maxX = 0, minY = 1, maxY = 0;
+            landmarks.forEach(p => {
+              if (p.x < minX) minX = p.x;
+              if (p.x > maxX) maxX = p.x;
+              if (p.y < minY) minY = p.y;
+              if (p.y > maxY) maxY = p.y;
+            });
+            
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            const width = maxX - minX;
+            const height = maxY - minY;
+            
+            // Video is mirrored for user, so x=0 is right and x=1 is left, but center is still ~0.5
+            const isCentered = centerX > 0.38 && centerX < 0.62 && centerY > 0.30 && centerY < 0.68;
+            const isGoodSize = width > 0.20 && width < 0.58 && height > 0.25 && height < 0.70;
+            
+            setFacePositionGood(isCentered && isGoodSize);
+            
+            if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
+              const matrix = results.facialTransformationMatrixes[0].data;
+              const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
+              const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
+              
+              setLookStraightGood(Math.abs(yaw) < 14 && Math.abs(pitch) < 14);
+            } else {
+              setLookStraightGood(false);
+            }
+          } else {
+            setFacePositionGood(false);
+            setLookStraightGood(false);
+          }
+      } catch (e) {
+          console.error("Error detecting face:", e);
+      }
+    }
+    
+    if (!capturedImage) {
+        requestRef.current = requestAnimationFrame(processFrame);
+    }
+  }, [capturedImage]);
+
+  useEffect(() => {
+    if (stream && !capturedImage && landmarkerRef.current) {
+      requestRef.current = requestAnimationFrame(processFrame);
+    }
+    return () => {
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
+  }, [stream, capturedImage, processFrame]);
 
   const startCamera = useCallback(async () => {
     setIsLoading(true);
@@ -30,8 +164,8 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
         video: {
           facingMode: 'user',
           aspectRatio: { ideal: 4 / 3 },
-          width: { ideal: 1024 },
-          height: { ideal: 768 }
+          width: { ideal: 1920 },
+          height: { ideal: 1440 }
         },
         audio: false
       });
@@ -83,7 +217,12 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       if (ctx) {
+        // Mirror the image horizontally to match the preview
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Reset transformation for future drawings
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         const dataUrl = canvas.toDataURL('image/jpeg');
         setCapturedImage(dataUrl);
       }
@@ -104,8 +243,10 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     setCapturedImage(null);
   };
 
+  const allGood = lightingGood && facePositionGood && lookStraightGood;
+
   return (
-    <div className="relative w-full max-w-2xl mx-auto aspect-[4/3] bg-zinc-100/90 dark:bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-400 dark:border-zinc-800 shadow-2xl">
+    <div className="relative w-full max-w-2xl mx-auto aspect-[3/4] sm:aspect-[4/5] max-h-[85vh] bg-zinc-100/90 dark:bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-400 dark:border-zinc-800 shadow-2xl">
       <AnimatePresence mode="wait">
         {!capturedImage ? (
           <motion.div
@@ -120,16 +261,35 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               autoPlay
               playsInline
               muted
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover scale-x-[-1]"
             />
             {isLoading && !error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-100/90 dark:bg-zinc-900/90 gap-4">
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-100/90 dark:bg-zinc-900/90 gap-4 z-20">
                 <RefreshCw className="w-8 h-8 text-emerald-500 animate-spin" />
                 <p className="text-zinc-400 text-sm animate-pulse">Iniciando cámara...</p>
               </div>
             )}
+            
+            {!isLoading && !error && (
+              <div className="absolute inset-0 pointer-events-none flex flex-col items-center pt-4 sm:pt-6 z-10 overflow-hidden">
+                <div className="flex gap-1.5 sm:gap-3 bg-zinc-900/40 p-1.5 sm:p-2.5 rounded-2xl backdrop-blur-md">
+                  <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-white font-bold text-[9px] sm:text-xs text-center shadow-lg transition-colors duration-300 ${lightingGood ? 'bg-emerald-500/90' : 'bg-rose-500/90'}`}>
+                    Iluminación<br/><span className="text-[8px] sm:text-[9px] opacity-90">{lightingGood ? 'Bien' : 'Mal'}</span>
+                  </div>
+                  <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-white font-bold text-[9px] sm:text-xs text-center shadow-lg transition-colors duration-300 ${lookStraightGood ? 'bg-emerald-500/90' : 'bg-rose-500/90'}`}>
+                    Mirada Frontal<br/><span className="text-[8px] sm:text-[9px] opacity-90">{lookStraightGood ? 'Bien' : 'Mal'}</span>
+                  </div>
+                  <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-white font-bold text-[9px] sm:text-xs text-center shadow-lg transition-colors duration-300 ${facePositionGood ? 'bg-emerald-500/90' : 'bg-rose-500/90'}`}>
+                    Posición<br/><span className="text-[8px] sm:text-[9px] opacity-90">{facePositionGood ? 'Bien' : 'Mal'}</span>
+                  </div>
+                </div>
+                
+                <div className={`w-[280px] h-[280px] sm:w-[360px] sm:h-[360px] mt-2 sm:mt-4 rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400' : 'border-white/80'}`} />
+              </div>
+            )}
+
             {error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center gap-6">
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center gap-6 z-20 bg-zinc-100/90 dark:bg-zinc-900/90">
                 <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
                   <AlertCircle className="w-8 h-8 text-red-500" />
                 </div>
@@ -151,14 +311,14 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 </button>
               </div>
             )}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
               <button
                 onClick={capturePhoto}
-                disabled={isAnalyzing || !!error}
-                className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:scale-100"
+                disabled={isAnalyzing || !!error || !allGood}
+                className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:bg-gray-300"
               >
                 <div className="w-14 h-14 rounded-full border-2 border-zinc-900 flex items-center justify-center">
-                  <CameraIcon className="w-6 h-6 text-zinc-900" />
+                  <CameraIcon className={`w-6 h-6 ${!allGood ? 'text-gray-400' : 'text-zinc-900'}`} />
                 </div>
               </button>
             </div>
@@ -171,8 +331,8 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             exit={{ opacity: 0 }}
             className="relative w-full h-full"
           >
-            <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4">
+            <img src={capturedImage} alt="Captured" className="w-full h-full object-cover scale-x-[-1]" />
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4 z-20">
               <button
                 onClick={handleRetake}
                 className="px-6 py-3 rounded-full bg-zinc-800 text-white flex items-center gap-2 hover:bg-zinc-700 transition-colors"

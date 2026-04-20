@@ -118,8 +118,10 @@ async function startServer() {
       console.log(chalk.bgYellowBright(chalk.black(">>> [db] Authenticating database")));
       await sequelize.authenticate();
       console.log(chalk.yellow(">>> [db] Database connection established."));
-      await sequelize.sync({ alter: true });
-      console.log(chalk.yellow(">>> [db] Database synced with schema changes."));
+      
+      await sequelize.sync();
+      
+      console.log(chalk.yellow(">>> [db] Database synced."));
       setDbReady(true);
 
       console.log(chalk.bgGreenBright(chalk.black(">>> [startServer] Initializing servers...")));

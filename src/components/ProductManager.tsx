@@ -9,9 +9,8 @@ interface ProductManagerProps {
   token: string;
 }
 
-// 1. Memoized Product Item to avoid re-renders
 const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Product, onEdit: (p: Product) => void, onDelete: (id: number) => void }) => {
-  const targets = {
+  const targets: Record<string, string> = {
     spots: "Puntos",
     wrinkles: "Arrugas",
     texture: "Textura",
@@ -26,55 +25,55 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
   }
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="flex-shrink-0 p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm flex items-center gap-8 group transition-colors duration-300"
+      className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-4 shadow-sm hover:shadow-md transition-all group flex flex-col h-full"
     >
-      <div className="min-w-[80px] w-20 h-20 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 relative transition-colors duration-300 mb-auto">
+      <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-gray-50 dark:bg-slate-800 mb-4 border border-gray-100 dark:border-slate-800">
         {product.images && product.images.length > 0 ? (
-          <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
+          <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-slate-700">
-            <ImageIcon className="w-6 h-6" />
+            <ImageIcon className="w-8 h-8" />
           </div>
         )}
-        {product.images && product.images.length > 1 && (
-          <div className="absolute bottom-0 right-0 bg-black/60 text-white text-[8px] px-1 font-bold">
-            +{product.images.length - 1}
-          </div>
-        )}
-      </div>
-      <div className="min-w-0 space-y-2">
-
-        <div className="flex items-center gap-8">
-          <h4 className="min-w-[80px] font-bold text-slate-800 dark:text-white truncate transition-colors duration-300">{product.title}</h4>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
-              {targets[product.target]}
-            </span>
-            <span className="px-2 py-0.5 bg-zinc-200 dark:bg-zinc-600/50 text-zinc-800 dark:text-zinc-200 text-[10px] font-black uppercase tracking-widest rounded-md space-x-1">
-              <span>rango</span><span>{product.range}</span>
-            </span>
-          </div>
+        <div className="absolute top-2 left-2 flex gap-1">
+          <span className="px-2 py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm text-[#0B5C66] dark:text-teal-400">
+            {targets[product.target]}
+          </span>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5 transition-colors duration-300">{product.description}</p>
-        <span className="text-[#0B5C66] dark:text-teal-400 font-black mt-1 transition-colors duration-300">${product.price.toFixed(2)}</span>
+        <div className="absolute bottom-2 right-2 bg-[#0B5C66] text-white text-xs font-black px-2 py-1 rounded-lg shadow-lg">
+          ${product.price.toFixed(2)}
+        </div>
+      </div>
+      
+      <div className="flex-grow space-y-1 px-1">
+        <h4 className="font-bold text-slate-900 dark:text-white truncate">{product.title}</h4>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed h-8">
+          {product.description}
+        </p>
       </div>
 
-      <div className="flex items-center gap-1 ms-auto">
-        <button
-          onClick={() => onEdit(product)}
-          className="p-2 text-slate-400 dark:text-slate-500 hover:text-[#0B5C66] dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 rounded-lg transition-all"
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => onDelete(product.id)}
-          className="p-2 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50 dark:border-slate-800">
+        <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
+          Rango: {product.range}
+        </div>
+        <div className="flex gap-1">
+          <button
+            onClick={() => onEdit(product)}
+            className="p-2 text-slate-400 hover:text-[#0B5C66] hover:bg-[#0B5C66]/10 rounded-xl transition-all"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(product.id)}
+            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -82,7 +81,6 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
 
 ProductItem.displayName = 'ProductItem';
 
-// 2. Separate Component for the Form to isolate its state
 const ProductForm = ({
   initialData,
   isEditing,
@@ -123,7 +121,6 @@ const ProductForm = ({
 
     setIsUploading(true);
     const form = new FormData();
-    // Enviar cada archivo con la clave 'productImages' para que coincida con el backend
     for (let i = 0; i < files.length; i++) {
       form.append('productImages', files[i]);
     }
@@ -135,14 +132,12 @@ const ProductForm = ({
           Authorization: `Bearer ${token}`
         }
       });
-      // Aseguramos que los caminos devueltos por el servidor se agreguen correctamente
       setFormData(prev => ({
         ...prev,
         images: [...(prev.images || []), ...response.data.paths]
       }));
       toast.success('Imágenes subidas correctamente');
     } catch (err) {
-      console.error("Error en subida:", err);
       toast.error('Error al subir imágenes');
     } finally {
       setIsUploading(false);
@@ -171,8 +166,7 @@ const ProductForm = ({
         });
         toast.success('Producto actualizado correctamente');
       } else {
-
-        await axios.post('/api/products', { ...formData }, {
+        await axios.post('/api/products', formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Producto creado correctamente');
@@ -184,143 +178,120 @@ const ProductForm = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto transition-colors duration-300">
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[200] flex items-center justify-center p-4">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg my-auto border border-transparent dark:border-slate-800 transition-colors duration-300 max-h-[95vh] flex flex-col"
+        initial={{ opacity: 0, y: 50, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 50, scale: 0.95 }}
+        className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-white/20"
       >
-        <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-[#0B5C66] dark:bg-teal-900/40 text-white shrink-0">
-          <h3 className="font-bold text-sm">{isEditing ? 'Editar Producto' : 'Nuevo Producto'}</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-white/10 rounded-full transition-colors">
-            <X className="w-4 h-4" />
+        <div className="p-8 pb-4 flex items-center justify-between shrink-0">
+          <div>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white">{isEditing ? 'Editar Producto' : 'Nuevo Producto'}</h3>
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Gestión de catálogo</p>
+          </div>
+          <button onClick={onClose} className="p-3 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-2xl transition-all">
+            <X className="w-5 h-5" />
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Título</label>
-            <input
-              required
-              type="text"
-              value={formData.title || ''}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Objetivo</label>
-              <select
-                value={formData.target || 'spots'}
-                onChange={(e) => setFormData({ ...formData, target: e.target.value })}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
-              >
-                {targetOptions.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Precio</label>
+        
+        <form onSubmit={handleSubmit} className="p-8 pt-4 space-y-6 overflow-y-auto no-scrollbar">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nombre del Producto</label>
               <input
                 required
-                step="0.10"
-                type="number"
-                value={formData.price?.toFixed(2) || 0}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all"
+                type="text"
+                placeholder="E.g. Serum Facial Hidratante"
+                value={formData.title || ''}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-[#0B5C66] outline-none transition-all dark:text-white"
               />
             </div>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between ml-1">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Rango de Aplicación (0-100)</label>
-              <span className="text-sm font-bold text-[#0B5C66] dark:text-teal-400">{formData.range || 0}</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="10"
-              value={formData.range || 0}
-              onChange={(e) => setFormData({ ...formData, range: parseInt(e.target.value) })}
-              className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#0B5C66] dark:accent-teal-500"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Descripción</label>
-            <textarea
-              required
-              rows={3}
-              value={formData.description || ''}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all resize-none"
-            />
-          </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between ml-1">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Imágenes del Producto</label>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Sube tus archivos de imagen</span>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Objetivo</label>
+                <select
+                  value={formData.target || 'spots'}
+                  onChange={(e) => setFormData({ ...formData, target: e.target.value })}
+                  className="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-[#0B5C66] outline-none transition-all dark:text-white appearance-none"
+                >
+                  {targetOptions.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Precio ($)</label>
+                <input
+                  required
+                  type="number"
+                  step="0.01"
+                  value={formData.price || ''}
+                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                  className="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-[#0B5C66] outline-none transition-all dark:text-white"
+                />
+              </div>
             </div>
 
-            <div className="relative group">
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center ml-1">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Rango de Aplicación</label>
+                <span className="text-sm font-black text-[#0B5C66] dark:text-teal-400">{formData.range || 0}%</span>
+              </div>
               <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="product-image-upload"
-                disabled={isUploading}
+                type="range"
+                min="0"
+                max="100"
+                step="10"
+                value={formData.range || 0}
+                onChange={(e) => setFormData({ ...formData, range: parseInt(e.target.value) })}
+                className="w-full h-2 bg-gray-100 dark:bg-slate-800 rounded-full appearance-none cursor-pointer accent-[#0B5C66]"
               />
-              <label
-                htmlFor="product-image-upload"
-                className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-[#0B5C66]/30 dark:hover:border-teal-400/30 transition-all ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-6 h-6 text-[#0B5C66] dark:text-teal-400 animate-spin mb-2" />
-                    <span className="text-xs font-bold text-[#0B5C66] dark:text-teal-400">Subiendo...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-6 h-6 text-slate-400 dark:text-slate-500 group-hover:text-[#0B5C66] dark:group-hover:text-teal-400 mb-2" />
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-[#0B5C66] dark:group-hover:text-teal-400 transition-colors">Click para subir imágenes</span>
-                  </>
-                )}
-              </label>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 mt-2">
-              <AnimatePresence>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Descripción</label>
+              <textarea
+                required
+                rows={3}
+                placeholder="Describe los beneficios del producto..."
+                value={formData.description || ''}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="w-full px-5 py-3.5 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-teal-500/10 focus:border-[#0B5C66] outline-none transition-all dark:text-white resize-none"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Galería de Imágenes</label>
+              
+              <div className="grid grid-cols-4 gap-3">
+                <label className={`aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 transition-all ${isUploading ? 'opacity-50' : ''}`}>
+                  <input type="file" multiple accept="image/*" onChange={handleFileUpload} className="hidden" disabled={isUploading} />
+                  {isUploading ? <Loader2 className="w-5 h-5 animate-spin text-[#0B5C66]" /> : <Upload className="w-5 h-5 text-slate-400" />}
+                </label>
+                
                 {formData.images?.map((url, index) => (
-                  <motion.div
-                    key={`${url}-${index}`}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    className="relative aspect-square rounded-lg overflow-hidden border border-gray-100 dark:border-slate-700 group bg-gray-50 dark:bg-slate-800 shadow-sm transition-colors duration-300"
-                  >
+                  <div key={index} className="relative aspect-square rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700 shadow-sm">
                     <img src={url} alt="Product" className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                      className="absolute top-1 right-1 p-1 bg-rose-500 text-white rounded-lg shadow-lg hover:bg-rose-600 transition-all"
                     >
                       <X className="w-3 h-3" />
                     </button>
-                  </motion.div>
+                  </div>
                 ))}
-              </AnimatePresence>
+              </div>
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-4 bg-[#0B5C66] dark:bg-teal-600 text-white rounded-2xl font-bold shadow-lg shadow-[#0B5C66]/20 dark:shadow-teal-900/20 hover:bg-[#0B5C66]/90 dark:hover:bg-teal-700 transition-all flex items-center justify-center gap-2 mt-4"
+            className="w-full py-4 bg-[#0B5C66] dark:bg-teal-600 text-white rounded-[1.5rem] font-black shadow-xl shadow-[#0B5C66]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-6 sticky bottom-0"
           >
             <Save className="w-5 h-5" />
-            {isEditing ? 'Actualizar Producto' : 'Crear Producto'}
+            {isEditing ? 'Actualizar Producto' : 'Publicar Producto'}
           </button>
         </form>
       </motion.div>
@@ -335,19 +306,6 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
   const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTarget, setFilterTarget] = useState('');
-
-  const showModal = !!currentProduct;
-
-  useEffect(() => {
-    if (showModal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [showModal]);
 
   const fetchProducts = async () => {
     setIsLoading(true);
@@ -366,9 +324,8 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
   }, []);
 
   const handleDelete = useCallback(async (id: number) => {
-    toast('¿Estás seguro de que deseas eliminar este producto?', {
+    toast('¿Eliminar este producto?', {
       description: 'Esta acción no se puede deshacer.',
-      icon: <AlertCircle className="w-5 h-5 text-red-500" />,
       action: {
         label: 'Eliminar',
         onClick: async () => {
@@ -376,15 +333,13 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
             await axios.delete(`/api/products/${id}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
-            toast.success('Producto eliminado correctamente');
+            toast.success('Producto eliminado');
             fetchProducts();
           } catch (err) {
-            console.error("Error deleting product:", err);
-            toast.error('No se pudo eliminar el producto.');
+            toast.error('No se pudo eliminar');
           }
         }
-      },
-      cancel: { label: 'Cancelar', onClick: () => { } }
+      }
     });
   }, [token]);
 
@@ -394,55 +349,63 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
   }, []);
 
   const filteredProducts = useMemo(() => {
-    return products
-      .filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()) && (filterTarget === '' || p.target === filterTarget));
+    return products.filter(p => 
+      p.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
+      (filterTarget === '' || p.target === filterTarget)
+    );
   }, [products, searchTerm, filterTarget]);
 
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <ShoppingBag className="w-6 h-6 text-[#0B5C66] dark:text-teal-400" />
-          Gestión de Productos
-        </h3>
+    <div className="space-y-8 py-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <h3 className="text-2xl font-black text-slate-900 dark:text-white">Catálogo de Productos</h3>
+          <p className="text-sm text-slate-500 font-medium">Administra las recomendaciones de la IA</p>
+        </div>
         <button
           onClick={() => { setCurrentProduct({ target: 'spots', price: 0, images: [] }); setIsEditing(false); }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#0B5C66] dark:bg-teal-600 text-white rounded-xl font-bold hover:bg-[#0B5C66]/90 dark:hover:bg-teal-700 transition-all text-sm"
+          className="flex items-center gap-2 px-6 py-3 bg-[#0B5C66] dark:bg-teal-600 text-white rounded-2xl font-black shadow-lg shadow-[#0B5C66]/20 hover:scale-105 transition-all text-sm"
         >
-          <Plus className="w-4 h-4" />
-          Nuevo Producto
+          <Plus className="w-5 h-5" />
+          Añadir Producto
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-grow">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar productos..."
+            placeholder="Buscar por nombre..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all text-sm transition-colors duration-300"
+            className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-teal-500/10 outline-none transition-all shadow-sm"
           />
         </div>
-        <div className="relative transition-colors duration-300">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
+        <div className="relative w-full sm:w-64">
+          <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <select
             value={filterTarget}
             onChange={(e) => setFilterTarget(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B5C66]/20 dark:focus:ring-teal-400/20 focus:border-[#0B5C66] dark:focus:border-teal-400 text-slate-900 dark:text-white transition-all text-sm appearance-none transition-colors duration-300"
+            className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl appearance-none outline-none focus:ring-4 focus:ring-teal-500/10 transition-all shadow-sm"
           >
             <option value="">Todos los objetivos</option>
-            {[
-              'spots', 'wrinkles', 'texture', 'darkCircles', 'pores',
-              'redness', 'oiliness', 'moisture', 'eyebag', 'droopyEyelid', 'acne'
-            ].map(t => <option key={t} value={t}>{t}</option>)}
+            <option value="spots">Puntos</option>
+            <option value="wrinkles">Arrugas</option>
+            <option value="texture">Textura</option>
+            <option value="darkCircles">Ojeras</option>
+            <option value="pores">Poros</option>
+            <option value="redness">Enrojecimiento</option>
+            <option value="oiliness">Grasitud</option>
+            <option value="moisture">Humedad</option>
+            <option value="eyebag">Bolsas</option>
+            <option value="droopyEyelid">Párpados</option>
+            <option value="acne">Acné</option>
           </select>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 overflow-x-scroll md:overflow-auto min-h-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
         <AnimatePresence mode="popLayout">
           {filteredProducts.map((product) => (
             <ProductItem
@@ -455,13 +418,13 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
         </AnimatePresence>
 
         {!isLoading && filteredProducts.length === 0 && (
-          <div className="text-center py-12 bg-gray-50 dark:bg-slate-900/50 rounded-3xl border border-dashed border-gray-200 dark:border-slate-800 transition-colors duration-300">
-            <p className="text-slate-400 dark:text-slate-600 text-sm">No se encontraron productos</p>
+          <div className="col-span-full flex flex-col items-center justify-center py-20 bg-gray-50 dark:bg-slate-900/50 rounded-[3rem] border border-dashed border-gray-200 dark:border-slate-800">
+            <ShoppingBag className="w-12 h-12 text-slate-300 mb-4" />
+            <p className="text-slate-500 font-bold">No se encontraron productos en esta categoría</p>
           </div>
         )}
       </div>
 
-      {/* Edit/Create Modal */}
       <AnimatePresence>
         {currentProduct && (
           <ProductForm
