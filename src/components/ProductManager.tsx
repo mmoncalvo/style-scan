@@ -29,7 +29,7 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm flex items-center gap-8 group transition-colors duration-300"
+      className="flex-shrink-0 p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm flex items-center gap-8 group transition-colors duration-300"
     >
       <div className="min-w-[80px] w-20 h-20 rounded-xl overflow-hidden bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 relative transition-colors duration-300 mb-auto">
         {product.images && product.images.length > 0 ? (
@@ -48,7 +48,7 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
       <div className="min-w-0 space-y-2">
 
         <div className="flex items-center gap-8">
-          <h4 className="min-w-[200px] font-bold text-slate-800 dark:text-white truncate transition-colors duration-300">{product.title}</h4>
+          <h4 className="min-w-[80px] font-bold text-slate-800 dark:text-white truncate transition-colors duration-300">{product.title}</h4>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-[#0B5C66] dark:text-teal-400 text-[10px] font-black uppercase tracking-widest rounded-md">
               {targets[product.target]}
