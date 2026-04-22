@@ -66,6 +66,7 @@ export const Analysis = sequelize.define('Analysis', {
   moisture: DataTypes.INTEGER,
   eyebag: DataTypes.INTEGER,
   droopyEyelid: DataTypes.INTEGER,
+  droopyLowerEyelid: DataTypes.INTEGER,
   acne: DataTypes.INTEGER,
   imageUrl: DataTypes.STRING,
   rawResponse: DataTypes.TEXT,

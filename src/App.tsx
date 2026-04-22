@@ -314,7 +314,7 @@ export default function App() {
           )}        </AnimatePresence>
       </main>
 
-      <footer className="border-t border-gray-200 dark:border-slate-800 py-12 mt-20 bg-white dark:bg-slate-900 transition-colors duration-300">
+      <footer className="border-t border-gray-200 dark:border-slate-800 py-12 mt-5 bg-white dark:bg-slate-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <p className="text-slate-500 dark:text-slate-400 text-sm">Powered by Perfect Corp Skin Analysis API & AI Studio.</p>
         </div>

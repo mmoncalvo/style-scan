@@ -27,8 +27,10 @@ const targetLabels: Record<string, string> = {
   moisture: 'Humedad',
   eyebag: 'Bolsas',
   eye_bag: 'Bolsas',
-  droopyEyelid: 'Párpado Caído',
-  droopy_upper_eyelid: 'Párpado Caído',
+  droopyEyelid: 'Párp. Superior',
+  droopy_upper_eyelid: 'Párp. Superior',
+  droopyLowerEyelid: 'Párp. Inferior',
+  droopy_lower_eyelid: 'Párp. Inferior',
 };
 
 export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProducts }) => {
@@ -56,7 +58,8 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
     { label: 'Grasitud', type: 'oiliness', targetKey: 'oiliness', value: result.oiliness, icon: Activity },
     { label: 'Humedad', type: 'moisture', targetKey: 'moisture', value: result.moisture, icon: Droplets },
     { label: 'Bolsas', type: 'eye_bag', targetKey: 'eyebag', value: result.eyebag, icon: Activity },
-    { label: 'Párpado Caído', type: 'droopy_upper_eyelid', targetKey: 'droopyEyelid', value: result.droopyEyelid, icon: Activity },
+    { label: 'Párp. Superior', type: 'droopy_upper_eyelid', targetKey: 'droopyEyelid', value: result.droopyEyelid, icon: Activity },
+    { label: 'Párp. Inferior', type: 'droopy_lower_eyelid', targetKey: 'droopyLowerEyelid', value: result.droopyLowerEyelid ?? 0, icon: Activity },
     { label: 'Acné', type: 'acne', targetKey: 'acne', value: result.acne, icon: AlertCircle },
   ];
 
