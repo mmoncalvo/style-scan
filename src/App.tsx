@@ -252,14 +252,6 @@ export default function App() {
         <AnimatePresence mode="wait">
           {view === 'camera' && (
             <motion.div key="camera-view" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-8">
-              <div className="text-center max-w-4xl mx-auto mt-8">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Analiza tu piel en segundos</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Captura una foto o sube una imagen de tu rostro. Nuestra IA analizará múltiples parámetros para darte un reporte detallado.</p>
-              </div>
-              <div className="flex justify-center gap-4">
-                <button onClick={() => setInputMethod('camera')} className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${inputMethod === 'camera' ? 'bg-[#0B5C66] text-white border-[#0B5C66] shadow-lg shadow-[#0B5C66]/20' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'}`}><CameraIcon className="w-4 h-4" /> Usar Cámara</button>
-                <button onClick={() => setInputMethod('upload')} className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${inputMethod === 'upload' ? 'bg-[#0B5C66] text-white border-[#0B5C66] shadow-lg shadow-[#0B5C66]/20' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'}`}><Upload className="w-4 h-4" /> Subir Imagen</button>
-              </div>
               <div className="min-h-[400px]">
                 <AnimatePresence mode="wait">
                   {inputMethod === 'camera' ? (
@@ -268,6 +260,14 @@ export default function App() {
                     <motion.div key="upload-input" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}><ImageUpload onUpload={handleCapture} isAnalyzing={isAnalyzing} /></motion.div>
                   )}
                 </AnimatePresence>
+              </div>
+              <div className="text-center max-w-4xl mx-auto mt-8">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4">Analiza tu piel en segundos</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Captura una foto o sube una imagen de tu rostro. Nuestra IA analizará múltiples parámetros para darte un reporte detallado.</p>
+              </div>
+              <div className="flex justify-center gap-4">
+                <button onClick={() => setInputMethod('camera')} className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${inputMethod === 'camera' ? 'bg-[#0B5C66] text-white border-[#0B5C66] shadow-lg shadow-[#0B5C66]/20' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'}`}><CameraIcon className="w-4 h-4" /> Usar Cámara</button>
+                <button onClick={() => setInputMethod('upload')} className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 border ${inputMethod === 'upload' ? 'bg-[#0B5C66] text-white border-[#0B5C66] shadow-lg shadow-[#0B5C66]/20' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-gray-200 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700'}`}><Upload className="w-4 h-4" /> Subir Imagen</button>
               </div>
             </motion.div>
           )}

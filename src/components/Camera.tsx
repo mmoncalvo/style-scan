@@ -157,7 +157,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               
               // Video is mirrored for user, so x=0 is right and x=1 is left, but center is still ~0.5
               const isCentered = centerX > 0.35 && centerX < 0.65 && centerY > 0.30 && centerY < 0.70;
-              const isGoodSize = width > 0.20 && width < 0.70 && height > 0.28 && height < 0.85;
+              const isGoodSize = width > 0.22 && width < 0.48 && height > 0.35 && height < 0.65;
               
               setFacePositionGood(isCentered && isGoodSize);
               
@@ -336,7 +336,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                   </div>
                 </div>
                 
-                <div className={`w-[210px] h-[280px] sm:w-[270px] sm:h-[360px] mt-2 sm:mt-4 rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400' : 'border-white/80'}`} />
+                <div className="flex-1 flex items-center justify-center pb-16 sm:items-start sm:justify-center sm:pt-6 sm:pb-0">
+                  <div className={`w-[245px] h-[330px] sm:w-[270px] sm:h-[360px] rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400' : 'border-white/80'}`} />
+                </div>
               </div>
             )}
 
