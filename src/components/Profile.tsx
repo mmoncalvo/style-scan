@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  User, 
-  Mail, 
-  CreditCard, 
-  Lock, 
-  Loader2, 
-  Save, 
-  LogOut, 
-  Clock, 
+import {
+  User,
+  Mail,
+  CreditCard,
+  Lock,
+  Loader2,
+  Save,
+  LogOut,
+  Clock,
   History as HistoryIcon,
   ShieldCheck,
   Settings,
@@ -76,13 +76,13 @@ export const Profile: React.FC<ProfileProps> = ({
     >
       {/* Header Profile Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden mb-8 transition-all duration-300">
-        <div className="h-32 bg-gradient-to-r from-[#0B5C66] to-[#148e9c] dark:from-teal-950 dark:to-slate-900 relative">
-           {user.role === 'admin' && (
-             <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
-               <ShieldCheck className="w-4 h-4 text-white" />
-               <span className="text-[10px] font-bold text-white uppercase tracking-widest">Admin</span>
-             </div>
-           )}
+        <div className="h-32 mb-4 bg-gradient-to-r from-[#0B5C66] to-[#148e9c] dark:from-teal-950 dark:to-slate-900 relative">
+          {user.role === 'admin' && (
+            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
+              <ShieldCheck className="w-4 h-4 text-white" />
+              <span className="text-[10px] font-bold text-white uppercase tracking-widest">Admin</span>
+            </div>
+          )}
         </div>
         <div className="px-8 pb-8">
           <div className="relative flex flex-col md:flex-row md:items-end gap-6 -mt-12 mb-6">
@@ -261,6 +261,6 @@ export const Profile: React.FC<ProfileProps> = ({
 // Simple icon wrapper for ShoppingBag
 const ShoppingBagIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" />
   </svg>
 );

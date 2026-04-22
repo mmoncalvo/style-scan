@@ -11,6 +11,26 @@ interface AnalysisResultProps {
   allProducts: Product[];
 }
 
+const targetLabels: Record<string, string> = {
+  acne: 'Acné',
+  spots: 'Manchas',
+  age_spot: 'Manchas',
+  wrinkles: 'Arrugas',
+  wrinkle: 'Arrugas',
+  texture: 'Textura',
+  darkCircles: 'Ojeras',
+  dark_circle_v2: 'Ojeras',
+  pores: 'Poros',
+  pore: 'Poros',
+  redness: 'Enrojecimiento',
+  oiliness: 'Grasitud',
+  moisture: 'Humedad',
+  eyebag: 'Bolsas',
+  eye_bag: 'Bolsas',
+  droopyEyelid: 'Párpado Caído',
+  droopy_upper_eyelid: 'Párpado Caído',
+};
+
 export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProducts }) => {
   const [activeLayer, setActiveLayer] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -232,7 +252,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
                     <img src={product.images?.[0]} alt={product.title} className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div className="p-5 flex flex-col flex-grow">
-                    <div className="text-[10px] font-bold text-[#0B5C66] dark:text-teal-400 tracking-widest uppercase mb-2">{product.target}</div>
+                    <div className="text-[10px] font-bold text-[#0B5C66] dark:text-teal-400 tracking-widest uppercase mb-2">{targetLabels[product.target] || product.target}</div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight mb-4 flex-grow">{product.title}</h4>
                     <div className="flex items-center justify-between mt-auto">
                       <span className="font-bold text-slate-900 dark:text-white">${product.price.toFixed(2)}</span>
@@ -274,7 +294,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
               </div>
               <div className="w-full md:w-1/2 p-8 overflow-y-auto flex flex-col">
                 <div className="mb-6">
-                  <div className="text-xs text-[#0B5C66] dark:text-teal-400 font-bold mb-2 uppercase tracking-widest">{selectedProduct.target}</div>
+                  <div className="text-xs text-[#0B5C66] dark:text-teal-400 font-bold mb-2 uppercase tracking-widest">{targetLabels[selectedProduct.target] || selectedProduct.target}</div>
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-tight mb-2">{selectedProduct.title}</h3>
                   <div className="text-xl font-bold text-slate-900 dark:text-white">${selectedProduct.price.toFixed(2)}</div>
                 </div>

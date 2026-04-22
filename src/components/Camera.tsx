@@ -20,7 +20,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   const [lightingGood, setLightingGood] = useState(false);
   const [facePositionGood, setFacePositionGood] = useState(false);
   const [lookStraightGood, setLookStraightGood] = useState(false);
+  const [sharpnessGood, setSharpnessGood] = useState(false);
   
+  const [isLandmarkerReady, setIsLandmarkerReady] = useState(false);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const requestRef = useRef<number>();
   const lastVideoTimeRef = useRef(-1);
@@ -48,6 +50,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             return;
         }
         landmarkerRef.current = landmarker;
+        setIsLandmarkerReady(true);
       } catch (e) {
         console.error("Failed to initialize face landmarker:", e);
       }
@@ -62,92 +65,132 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   }, []);
 
   const processFrame = useCallback(() => {
-    if (!videoRef.current || !landmarkerRef.current || capturedImage) return;
+    if (capturedImage) return;
     
-    const video = videoRef.current;
-    
-    if (video.readyState >= 2 && video.currentTime !== lastVideoTimeRef.current) {
-      lastVideoTimeRef.current = video.currentTime;
+    if (videoRef.current && landmarkerRef.current) {
+      const video = videoRef.current;
       
-      // 1. Lighting Check
-      if (canvasRef.current) {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        if (ctx) {
-           const sampleSize = 64;
-           if (canvas.width !== sampleSize) {
-               canvas.width = sampleSize;
-               canvas.height = sampleSize;
-           }
-           ctx.drawImage(video, 0, 0, sampleSize, sampleSize);
-           const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
-           const data = imageData.data;
-           let sum = 0;
-           for(let i=0; i<data.length; i+=4) {
-             sum += (data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114);
-           }
-           const avg = sum / (sampleSize * sampleSize);
-           setLightingGood(avg > 70 && avg < 230); // Not too dark, not completely blown out
+      if (video.readyState >= 2 && video.currentTime !== lastVideoTimeRef.current) {
+        lastVideoTimeRef.current = video.currentTime;
+        
+         // 1. Lighting and Sharpness Check
+        if (canvasRef.current) {
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+          if (ctx) {
+             const sampleSize = 256; // Increased to 256 for high-res center crop
+             if (canvas.width !== sampleSize) {
+                 canvas.width = sampleSize;
+                 canvas.height = sampleSize;
+             }
+             
+             // Extract an unscaled center crop from the native video resolution
+             const vw = video.videoWidth || 640;
+             const vh = video.videoHeight || 480;
+             const sx = Math.max(0, (vw - sampleSize) / 2);
+             const sy = Math.max(0, (vh - sampleSize) / 2);
+             const sw = Math.min(vw, sampleSize);
+             const sh = Math.min(vh, sampleSize);
+             
+             ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sampleSize, sampleSize);
+             
+             const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+             const data = imageData.data;
+             
+             let sum = 0;
+             const gray = new Uint8Array(sampleSize * sampleSize);
+             for(let i=0; i<data.length; i+=4) {
+               const val = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+               sum += val;
+               gray[i/4] = val;
+             }
+             const avg = sum / (sampleSize * sampleSize);
+             setLightingGood(avg > 100 && avg < 220); // Stricter lighting
+             
+             // Laplacian variance for sharpness (blur detection)
+             let laplacianMean = 0;
+             const laplacian = new Int16Array(sampleSize * sampleSize);
+             for (let y = 1; y < sampleSize - 1; y++) {
+                 for (let x = 1; x < sampleSize - 1; x++) {
+                     const idx = y * sampleSize + x;
+                     const val = gray[idx - sampleSize] + gray[idx - 1] - 4 * gray[idx] + gray[idx + 1] + gray[idx + sampleSize];
+                     laplacian[idx] = val;
+                     laplacianMean += val;
+                 }
+             }
+             const count = (sampleSize - 2) * (sampleSize - 2);
+             laplacianMean /= count;
+             let variance = 0;
+             for (let y = 1; y < sampleSize - 1; y++) {
+                 for (let x = 1; x < sampleSize - 1; x++) {
+                     const idx = y * sampleSize + x;
+                     const diff = laplacian[idx] - laplacianMean;
+                     variance += diff * diff;
+                 }
+             }
+             // El umbral se reduce a 40. Las cámaras web (como MacBook) con fuerte
+             // suavizado en el hardware producen varianzas muy bajas. 
+             // Valores por debajo de 30-40 indicarán movimiento excesivo (motion blur).
+             setSharpnessGood((variance / count) > 40); 
+          }
         }
-      }
 
-      // 2. Face Position and Look Straight
-      try {
-          const results = landmarkerRef.current.detectForVideo(video, performance.now());
-          
-          if (results.faceLandmarks && results.faceLandmarks.length > 0) {
-            const landmarks = results.faceLandmarks[0];
+        // 2. Face Position and Look Straight
+        try {
+            const results = landmarkerRef.current.detectForVideo(video, performance.now());
             
-            let minX = 1, maxX = 0, minY = 1, maxY = 0;
-            landmarks.forEach(p => {
-              if (p.x < minX) minX = p.x;
-              if (p.x > maxX) maxX = p.x;
-              if (p.y < minY) minY = p.y;
-              if (p.y > maxY) maxY = p.y;
-            });
-            
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-            const width = maxX - minX;
-            const height = maxY - minY;
-            
-            // Video is mirrored for user, so x=0 is right and x=1 is left, but center is still ~0.5
-            const isCentered = centerX > 0.38 && centerX < 0.62 && centerY > 0.30 && centerY < 0.68;
-            const isGoodSize = width > 0.20 && width < 0.58 && height > 0.25 && height < 0.70;
-            
-            setFacePositionGood(isCentered && isGoodSize);
-            
-            if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
-              const matrix = results.facialTransformationMatrixes[0].data;
-              const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
-              const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
+            if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+              const landmarks = results.faceLandmarks[0];
               
-              setLookStraightGood(Math.abs(yaw) < 14 && Math.abs(pitch) < 14);
+              let minX = 1, maxX = 0, minY = 1, maxY = 0;
+              landmarks.forEach(p => {
+                if (p.x < minX) minX = p.x;
+                if (p.x > maxX) maxX = p.x;
+                if (p.y < minY) minY = p.y;
+                if (p.y > maxY) maxY = p.y;
+              });
+              
+              const centerX = (minX + maxX) / 2;
+              const centerY = (minY + maxY) / 2;
+              const width = maxX - minX;
+              const height = maxY - minY;
+              
+              // Video is mirrored for user, so x=0 is right and x=1 is left, but center is still ~0.5
+              const isCentered = centerX > 0.35 && centerX < 0.65 && centerY > 0.30 && centerY < 0.70;
+              const isGoodSize = width > 0.20 && width < 0.70 && height > 0.28 && height < 0.85;
+              
+              setFacePositionGood(isCentered && isGoodSize);
+              
+              if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
+                const matrix = results.facialTransformationMatrixes[0].data;
+                const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
+                const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
+                
+                setLookStraightGood(Math.abs(yaw) < 14 && Math.abs(pitch) < 14);
+              } else {
+                setLookStraightGood(false);
+              }
             } else {
+              setFacePositionGood(false);
               setLookStraightGood(false);
             }
-          } else {
-            setFacePositionGood(false);
-            setLookStraightGood(false);
-          }
-      } catch (e) {
-          console.error("Error detecting face:", e);
+        } catch (e) {
+            console.error("Error detecting face:", e);
+        }
       }
     }
     
-    if (!capturedImage) {
-        requestRef.current = requestAnimationFrame(processFrame);
-    }
+    requestRef.current = requestAnimationFrame(processFrame);
   }, [capturedImage]);
 
   useEffect(() => {
-    if (stream && !capturedImage && landmarkerRef.current) {
+    if (stream && !capturedImage && isLandmarkerReady) {
       requestRef.current = requestAnimationFrame(processFrame);
     }
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [stream, capturedImage, processFrame]);
+  }, [stream, capturedImage, isLandmarkerReady, processFrame]);
 
   const startCamera = useCallback(async () => {
     setIsLoading(true);
@@ -163,9 +206,8 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'user',
-          aspectRatio: { ideal: 4 / 3 },
-          width: { ideal: 1920 },
-          height: { ideal: 1440 }
+          width: { ideal: 3840 },
+          height: { ideal: 2160 }
         },
         audio: false
       });
@@ -229,21 +271,28 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     }
   };
 
-  const handleConfirm = () => {
-    if (capturedImage && canvasRef.current) {
-      canvasRef.current.toBlob((blob) => {
-        if (blob) {
-          onCapture(blob);
-        }
-      }, 'image/jpeg');
+  const handleConfirm = async () => {
+    if (capturedImage) {
+      try {
+        const res = await fetch(capturedImage);
+        const blob = await res.blob();
+        onCapture(blob);
+      } catch (err) {
+        console.error("Error creating blob from image:", err);
+      }
     }
   };
 
   const handleRetake = () => {
     setCapturedImage(null);
+    setLightingGood(false);
+    setFacePositionGood(false);
+    setLookStraightGood(false);
+    setSharpnessGood(false);
+    lastVideoTimeRef.current = -1;
   };
 
-  const allGood = lightingGood && facePositionGood && lookStraightGood;
+  const allGood = lightingGood && facePositionGood && lookStraightGood && sharpnessGood;
 
   return (
     <div className="relative w-full max-w-2xl mx-auto aspect-[3/4] sm:aspect-[4/5] max-h-[85vh] bg-zinc-100/90 dark:bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-400 dark:border-zinc-800 shadow-2xl">
@@ -282,9 +331,12 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                   <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-white font-bold text-[9px] sm:text-xs text-center shadow-lg transition-colors duration-300 ${facePositionGood ? 'bg-emerald-500/90' : 'bg-rose-500/90'}`}>
                     Posición<br/><span className="text-[8px] sm:text-[9px] opacity-90">{facePositionGood ? 'Bien' : 'Mal'}</span>
                   </div>
+                  <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-white font-bold text-[9px] sm:text-xs text-center shadow-lg transition-colors duration-300 ${sharpnessGood ? 'bg-emerald-500/90' : 'bg-rose-500/90'}`}>
+                    Nitidez<br/><span className="text-[8px] sm:text-[9px] opacity-90">{sharpnessGood ? 'Bien' : 'Mal'}</span>
+                  </div>
                 </div>
                 
-                <div className={`w-[280px] h-[280px] sm:w-[360px] sm:h-[360px] mt-2 sm:mt-4 rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400' : 'border-white/80'}`} />
+                <div className={`w-[210px] h-[280px] sm:w-[270px] sm:h-[360px] mt-2 sm:mt-4 rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400' : 'border-white/80'}`} />
               </div>
             )}
 
@@ -331,7 +383,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             exit={{ opacity: 0 }}
             className="relative w-full h-full"
           >
-            <img src={capturedImage} alt="Captured" className="w-full h-full object-cover scale-x-[-1]" />
+            <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4 z-20">
               <button
                 onClick={handleRetake}

@@ -108,6 +108,7 @@ router.post("/upload-products", authenticate, isAdmin, upload.array('productImag
     const paths = files.map(file => `/uploads/products/${file.filename}`);
     res.json({ paths });
   } catch (error: any) {
+    console.error(">>> [api/upload-products] Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -162,6 +163,7 @@ router.get("/products", async (req: any, res: any) => {
     });
     res.json(parsedProducts);
   } catch (error: any) {
+    console.error(">>> [api/get-products] Error:", error);
     res.status(500).json({ error: "Failed to fetch products", details: error.message });
   }
 });
@@ -175,6 +177,7 @@ router.post("/products", authenticate, isAdmin, async (req: any, res: any) => {
     const product = await Product.create(data);
     res.json(product);
   } catch (error: any) {
+    console.error(">>> [api/post-products] Error:", error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -192,6 +195,7 @@ router.put("/products/:id", authenticate, isAdmin, async (req: any, res: any) =>
     await product.update(data);
     res.json(product);
   } catch (error: any) {
+    console.error(">>> [api/put-products] Error:", error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -202,6 +206,7 @@ router.delete("/products/:id", authenticate, isAdmin, async (req: any, res: any)
     if (deletedCount === 0) return res.status(404).json({ error: "Product not found" });
     res.json({ success: true });
   } catch (error: any) {
+    console.error(">>> [api/delete-products] Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
