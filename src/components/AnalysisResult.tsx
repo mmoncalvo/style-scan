@@ -68,6 +68,14 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
   ];
 
   const recommendations = React.useMemo(() => {
+    // If an index is selected, filter products specifically for that target
+    if (activeLayer) {
+      const activeMetric = metrics.find(m => m.type === activeLayer);
+      if (activeMetric) {
+        return allProducts.filter(p => p.target === activeMetric.targetKey);
+      }
+    }
+
     const matches = allProducts.filter(product => {
       const metric = metrics.find(m => m.targetKey === product.target);
       if (!metric) return false;
@@ -80,7 +88,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
         return diffA - diffB;
       });
     return matches.length > 0 ? matches : allProducts;
-  }, [allProducts, metrics]);
+  }, [allProducts, metrics, activeLayer]);
 
   const handleDownloadPDF = async () => {
     const doc = new jsPDF();
@@ -243,7 +251,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
           </div>
           <div className="bg-transparent">
             <div className="flex items-center gap-4 mb-6">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Recomendaciones Curadas</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Recomendaciones ({recommendations.length})</h2>
               <span className="bg-teal-100 dark:bg-teal-900/30 text-[#0B5C66] dark:text-teal-400 text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase">Para Ti</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
