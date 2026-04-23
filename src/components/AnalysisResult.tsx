@@ -31,6 +31,8 @@ const targetLabels: Record<string, string> = {
   droopy_upper_eyelid: 'Párp. Superior',
   droopyLowerEyelid: 'Párp. Inferior',
   droopy_lower_eyelid: 'Párp. Inferior',
+  firmness: 'Firmeza',
+  radiance: 'Luminosidad',
 };
 
 export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProducts }) => {
@@ -60,6 +62,8 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
     { label: 'Bolsas', type: 'eye_bag', targetKey: 'eyebag', value: result.eyebag, icon: Activity },
     { label: 'Párp. Superior', type: 'droopy_upper_eyelid', targetKey: 'droopyEyelid', value: result.droopyEyelid, icon: Activity },
     { label: 'Párp. Inferior', type: 'droopy_lower_eyelid', targetKey: 'droopyLowerEyelid', value: result.droopyLowerEyelid ?? 0, icon: Activity },
+    { label: 'Firmeza', type: 'firmness', targetKey: 'firmness', value: result.firmness ?? 0, icon: Activity },
+    { label: 'Luminosidad', type: 'radiance', targetKey: 'radiance', value: result.radiance ?? 0, icon: Activity },
     { label: 'Acné', type: 'acne', targetKey: 'acne', value: result.acne, icon: AlertCircle },
   ];
 

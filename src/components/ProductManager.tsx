@@ -20,7 +20,10 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
     oiliness: "Grasitud",
     moisture: "Humedad",
     eyebag: "Bolsas",
-    droopyEyelid: "Párpado Caído",
+    droopyEyelid: "Párp. Superior",
+    droopyLowerEyelid: "Párp. Inferior",
+    firmness: "Firmeza",
+    radiance: "Luminosidad",
     acne: "Acné"
   }
   return (
@@ -111,7 +114,10 @@ const ProductForm = ({
     { value: 'oiliness', label: 'Grasitud' },
     { value: 'moisture', label: 'Humedad' },
     { value: 'eyebag', label: 'Bolsas' },
-    { value: 'droopyEyelid', label: 'Párpado Caído' },
+    { value: 'droopyEyelid', label: 'Párp. Superior' },
+    { value: 'droopyLowerEyelid', label: 'Párp. Inferior' },
+    { value: 'firmness', label: 'Firmeza' },
+    { value: 'radiance', label: 'Luminosidad' },
     { value: 'acne', label: 'Acné' }
   ];
 
@@ -399,7 +405,10 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
             <option value="oiliness">Grasitud</option>
             <option value="moisture">Humedad</option>
             <option value="eyebag">Bolsas</option>
-            <option value="droopyEyelid">Párpados</option>
+            <option value="droopyEyelid">Párp. Superior</option>
+            <option value="droopyLowerEyelid">Párp. Inferior</option>
+            <option value="firmness">Firmeza</option>
+            <option value="radiance">Luminosidad</option>
             <option value="acne">Acné</option>
           </select>
         </div>

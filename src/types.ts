@@ -32,6 +32,8 @@ export interface SkinAnalysis {
   eyebag: number;
   droopyEyelid: number;
   droopyLowerEyelid: number;
+  firmness: number;
+  radiance: number;
   acne: number;
   imageUrl: string;
   createdAt: string;

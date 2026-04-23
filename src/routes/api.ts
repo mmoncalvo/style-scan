@@ -253,6 +253,8 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
         eyebag: 5,
         droopyEyelid: 2,
         droopyLowerEyelid: 3,
+        firmness: 88,
+        radiance: 75,
         acne: 0
       };
 
@@ -284,7 +286,7 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
           "wrinkle", "pore", "texture", "acne", "oiliness",
           "eye_bag", "age_spot", "dark_circle_v2",
           "droopy_upper_eyelid", "droopy_lower_eyelid",
-          "moisture", "redness", "skin_type"
+          "moisture", "redness", "skin_type", "firmness", "radiance"
         ],
         miniserver_args: {
           enable_mask_overlay: false
@@ -302,7 +304,8 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
         const mockData = {
           skinScore: 82, skinAge: 27, skinType: "Mixta", spots: 8, wrinkles: 12,
           texture: 18, darkCircles: 25, pores: 14, redness: 10, oiliness: 20,
-          moisture: 65, eyebag: 15, droopyEyelid: 5, droopyLowerEyelid: 6, acne: 3
+          moisture: 65, eyebag: 15, droopyEyelid: 5, droopyLowerEyelid: 6, 
+          firmness: 70, radiance: 60, acne: 3
         };
         const savedAnalysis = await Analysis.create({
           ...mockData,
@@ -374,6 +377,8 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
       eyebag: getVal(rObj['eye_bag']),
       droopyEyelid: getVal(rObj['droopy_upper_eyelid']),
       droopyLowerEyelid: getVal(rObj['droopy_lower_eyelid']),
+      firmness: getVal(rObj['firmness']),
+      radiance: getVal(rObj['radiance']),
       acne: getVal(rObj['acne'])
     };
 
