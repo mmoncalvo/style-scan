@@ -79,7 +79,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
         const diffB = Math.abs((metrics.find(m => m.targetKey === b.target)?.value || 0) - (b.range || 0));
         return diffA - diffB;
       });
-    return matches.length > 0 ? matches.slice(0, 6) : allProducts.slice(0, 6);
+    return matches.length > 0 ? matches : allProducts;
   }, [allProducts, metrics]);
 
   const handleDownloadPDF = async () => {
@@ -259,7 +259,11 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
                     <img src={product.images?.[0]} alt={product.title} className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-500" />
                   </div>
                   <div className="p-5 flex flex-col flex-grow">
-                    <div className="text-[10px] font-bold text-[#0B5C66] dark:text-teal-400 tracking-widest uppercase mb-2">{targetLabels[product.target] || product.target}</div>
+                    <div className="text-[10px] font-bold text-[#0B5C66] dark:text-teal-400 tracking-widest uppercase mb-1">{targetLabels[product.target] || product.target}</div>
+                    <div className="flex gap-2 mb-3">
+                      <span className="text-[9px] font-mono bg-slate-50 dark:bg-slate-800/50 text-slate-400 px-1.5 py-0.5 rounded border border-gray-100 dark:border-slate-800">USR: {metrics.find(m => m.targetKey === product.target)?.value}%</span>
+                      <span className="text-[9px] font-mono bg-slate-50 dark:bg-slate-800/50 text-slate-400 px-1.5 py-0.5 rounded border border-gray-100 dark:border-slate-800">PRD: {product.range}%</span>
+                    </div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight mb-4 flex-grow">{product.title}</h4>
                     <div className="flex items-center justify-between mt-auto">
                       <span className="font-bold text-slate-900 dark:text-white">${product.price.toFixed(2)}</span>
