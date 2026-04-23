@@ -243,7 +243,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
                   <div className={`w-15 h-15 rounded-xl flex items-center justify-center mb-6 transition-colors ${activeLayer === metric.type ? 'bg-teal-500/30 dark:bg-teal-500/70 shadow-md' : 'bg-teal-50 dark:bg-teal-500/30 group-hover:bg-teal-100 dark:group-hover:bg-teal-700/70'}`}>
                     <metric.icon className={`w-6 h-6 ${activeLayer === metric.type ? 'text-teal-900' : 'text-teal-600 dark:text-teal-400'}`} />
                   </div>
-                  <div className="text-xl font-black text-slate-800 dark:text-white mb-1">{typeof metric.value === 'number' && metric.value > 10 ? `${metric.value}%` : metric.value}</div>
+                  <div className="text-xl font-black text-slate-800 dark:text-white mb-1">{typeof metric.value === 'number' ? `${metric.value}%` : metric.value}</div>
                   <div className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest leading-tight">{metric.label}</div>
                 </motion.div>
               ))}

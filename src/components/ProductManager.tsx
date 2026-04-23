@@ -28,10 +28,10 @@ const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Produc
   }
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl p-4 shadow-sm hover:shadow-md transition-all group flex flex-col h-full"
     >
       <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-gray-50 dark:bg-slate-800 mb-4 border border-gray-100 dark:border-slate-800">
@@ -415,7 +415,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 min-h-[400px]">
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           {filteredProducts.map((product) => (
             <ProductItem
               key={product.id}
