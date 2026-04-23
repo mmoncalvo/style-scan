@@ -365,7 +365,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
     <div className="space-y-8 py-4">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
-          <h3 className="text-2xl font-black text-slate-900 dark:text-white">Catálogo de Productos</h3>
+          <h3 className="text-2xl font-black text-slate-900 dark:text-white">Catálogo de Productos ({filteredProducts.length})</h3>
           <p className="text-sm text-slate-500 font-medium">Administra las recomendaciones de la IA</p>
         </div>
         <button
