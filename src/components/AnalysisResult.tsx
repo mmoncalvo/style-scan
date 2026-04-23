@@ -201,13 +201,13 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
             <img
               src={result.masks?.['resize_image'] || result.imageUrl}
               alt="Analyzed Base"
-              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${activeLayer ? 'brightness-[0.7] saturate-[0.95]' : 'brightness-100'}`}
             />
             {activeLayer && result.masks?.[activeLayer] && (
               <img
                 src={result.masks[activeLayer]}
                 alt={`${activeLayer} Mask`}
-                className="absolute inset-0 w-full h-full object-cover mix-blend-normal opacity-90 transition-opacity duration-300"
+                className="absolute inset-0 w-full h-full object-cover mix-blend-normal opacity-100 transition-opacity duration-300"
               />
             )}
             <div className="absolute bottom-4 left-4 right-4 flex items-center gap-2 text-white bg-black/40 backdrop-blur-md px-3 py-2 rounded-lg text-xs font-bold tracking-wide">
