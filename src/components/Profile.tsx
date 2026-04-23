@@ -76,9 +76,9 @@ export const Profile: React.FC<ProfileProps> = ({
     >
       {/* Header Profile Card */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden mb-8 transition-all duration-300">
-        <div className="h-32 mb-4 bg-gradient-to-r from-[#0B5C66] to-[#148e9c] dark:from-teal-950 dark:to-slate-900 relative">
+        <div className="h-18 mb-4 bg-gradient-to-r from-[#0B5C66] to-[#148e9c] dark:from-teal-950 dark:to-slate-900 relative">
           {user.role === 'admin' && (
-            <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
+            <div className="absolute top-6 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
               <ShieldCheck className="w-4 h-4 text-white" />
               <span className="text-[10px] font-bold text-white uppercase tracking-widest">Admin</span>
             </div>
