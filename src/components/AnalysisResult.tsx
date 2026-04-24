@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SkinAnalysis, Product } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { Activity, User, Droplets, Sparkles, AlertCircle, ShoppingBag, X, Clock } from 'lucide-react';
+import { Activity, User, Droplets, Sparkles, AlertCircle, ShoppingBag, X, Clock, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'sonner';
@@ -182,6 +182,27 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
       )}
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="w-full lg:w-[35%] flex flex-col gap-6">
+          {/* Imagen (Ahora Arriba) */}
+          <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-md relative aspect-square group">
+            <img
+              src={result.masks?.['resize_image'] || result.imageUrl}
+              alt="Analyzed Base"
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${activeLayer ? 'brightness-[0.7] saturate-[0.95]' : 'brightness-100'}`}
+            />
+            {activeLayer && result.masks?.[activeLayer] && (
+              <img
+                src={result.masks[activeLayer]}
+                alt={`${activeLayer} Mask`}
+                className="absolute inset-0 w-full h-full object-cover mix-blend-normal opacity-100 transition-opacity duration-300"
+              />
+            )}
+            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-2 text-white bg-black/40 backdrop-blur-md px-3 py-2 rounded-lg text-[10px] font-bold tracking-wide uppercase">
+              <Clock className="w-3.5 h-3.5" />
+              {new Date(result.createdAt).toLocaleDateString()} - {new Date(result.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+
+          {/* Tarjeta de Score (Ahora Abajo) */}
           <div className="bg-[#F3F4F6] dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center transition-colors duration-300">
             <div className="bg-[#0B5C66] w-full rounded-2xl flex flex-col items-center justify-center py-10 shadow-md">
               <div className="w-40 h-40 bg-white dark:bg-slate-800 rounded-full flex flex-col items-center justify-center shadow-lg relative transition-colors duration-300">
@@ -200,27 +221,11 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
               </p>
               <button
                 onClick={handleDownloadPDF}
-                className="w-full py-4 px-6 bg-[#0B5C66] hover:bg-[#094A52] dark:bg-teal-600 dark:hover:bg-teal-700 text-white text-sm font-bold tracking-widest uppercase rounded-xl transition-colors shadow-md"
+                className="w-full py-4 px-6 bg-[#0B5C66] hover:bg-[#094A52] dark:bg-teal-600 dark:hover:bg-teal-700 text-white text-sm font-bold tracking-widest uppercase rounded-xl transition-all shadow-md flex items-center justify-center gap-2 group"
               >
-                Descargar Reporte PDF
-              </button>            </div>
-          </div>
-          <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-md relative aspect-square group">
-            <img
-              src={result.masks?.['resize_image'] || result.imageUrl}
-              alt="Analyzed Base"
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${activeLayer ? 'brightness-[0.7] saturate-[0.95]' : 'brightness-100'}`}
-            />
-            {activeLayer && result.masks?.[activeLayer] && (
-              <img
-                src={result.masks[activeLayer]}
-                alt={`${activeLayer} Mask`}
-                className="absolute inset-0 w-full h-full object-cover mix-blend-normal opacity-100 transition-opacity duration-300"
-              />
-            )}
-            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-2 text-white bg-black/40 backdrop-blur-md px-3 py-2 rounded-lg text-xs font-bold tracking-wide">
-              <Clock className="w-4 h-4" />
-              ESCANEO HACE 2 MINUTOS
+                <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+                Descargar PDF
+              </button>
             </div>
           </div>
         </div>

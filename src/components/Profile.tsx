@@ -226,7 +226,7 @@ export const Profile: React.FC<ProfileProps> = ({
             exit={{ opacity: 0, y: -10 }}
             className="space-y-6"
           >
-            <div className="max-h-[70vh] overflow-y-auto pr-2 no-scrollbar">
+            <div>
               {history.length > 0 ? (
                 <History
                   history={history}
