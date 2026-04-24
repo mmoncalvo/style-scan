@@ -21,6 +21,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   const [facePositionGood, setFacePositionGood] = useState(false);
   const [lookStraightGood, setLookStraightGood] = useState(false);
   const [sharpnessGood, setSharpnessGood] = useState(false);
+  const [lastFaceBox, setLastFaceBox] = useState<{x: number, y: number, w: number, h: number} | null>(null);
   
   const [isLandmarkerReady, setIsLandmarkerReady] = useState(false);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
@@ -157,9 +158,14 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               
               // Video is mirrored for user, so x=0 is right and x=1 is left, but center is still ~0.5
               const isCentered = centerX > 0.35 && centerX < 0.65 && centerY > 0.30 && centerY < 0.70;
-              const isGoodSize = width > 0.22 && width < 0.48 && height > 0.35 && height < 0.65;
+              // Stricter size check to prevent "face too small" error. 
+              // Face must occupy at least 30% of width and 45% of height.
+              const isGoodSize = width > 0.30 && width < 0.55 && height > 0.45 && height < 0.75;
               
               setFacePositionGood(isCentered && isGoodSize);
+              if (isCentered && isGoodSize) {
+                setLastFaceBox({ x: minX, y: minY, w: width, h: height });
+              }
               
               if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
                 const matrix = results.facialTransformationMatrixes[0].data;
@@ -252,20 +258,51 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   }, [stream]);
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
+    if (videoRef.current && canvasRef.current && lastFaceBox) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      
+      // We will crop the image to a square area around the face with some padding
+      // This ensures the face is large enough for the API.
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      
+      // Calculate crop area with 30% padding
+      const padding = 0.3;
+      let cropW = lastFaceBox.w * (1 + padding * 2) * vw;
+      let cropH = lastFaceBox.h * (1 + padding * 2) * vh;
+      
+      // Make it square based on the larger dimension
+      const size = Math.max(cropW, cropH);
+      
+      let centerX = (lastFaceBox.x + lastFaceBox.w / 2) * vw;
+      let centerY = (lastFaceBox.y + lastFaceBox.h / 2) * vh;
+      
+      let sx = centerX - size / 2;
+      let sy = centerY - size / 2;
+      
+      // Clamp to video boundaries
+      if (sx < 0) sx = 0;
+      if (sy < 0) sy = 0;
+      if (sx + size > vw) sx = vw - size;
+      if (sy + size > vh) sy = vh - size;
+      
+      // Ensure we don't go out of bounds if size > video dim
+      const finalSize = Math.min(size, vw, vh);
+
+      canvas.width = 1024; // Force a good resolution for the API
+      canvas.height = 1024;
       const ctx = canvas.getContext('2d');
+      
       if (ctx) {
-        // Mirror the image horizontally to match the preview
+        // Mirror horizontally to match the preview
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        // Reset transformation for future drawings
+        
+        ctx.drawImage(video, sx, sy, finalSize, finalSize, 0, 0, 1024, 1024);
+        
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        const dataUrl = canvas.toDataURL('image/jpeg');
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
         setCapturedImage(dataUrl);
       }
     }
