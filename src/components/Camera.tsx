@@ -21,7 +21,6 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   const [facePositionGood, setFacePositionGood] = useState(false);
   const [lookStraightGood, setLookStraightGood] = useState(false);
   const [sharpnessGood, setSharpnessGood] = useState(false);
-  const [lastFaceBox, setLastFaceBox] = useState<{x: number, y: number, w: number, h: number} | null>(null);
   
   const [isLandmarkerReady, setIsLandmarkerReady] = useState(false);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
@@ -156,23 +155,20 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               const width = maxX - minX;
               const height = maxY - minY;
               
-              // Very forgiving centering check
-              const isCentered = centerX > 0.15 && centerX < 0.85 && centerY > 0.10 && centerY < 0.90;
-              // Very forgiving size check: as long as the face is visible, auto-crop will handle it.
-              const isGoodSize = width > 0.18 && width < 0.70 && height > 0.28 && height < 0.85;
+              // Broadened centering check
+              const isCentered = centerX > 0.25 && centerX < 0.75 && centerY > 0.20 && centerY < 0.80;
+              // Broadened size check: easier to pass while remaining safe for the API.
+              const isGoodSize = width > 0.24 && width < 0.55 && height > 0.38 && height < 0.75;
               
               setFacePositionGood(isCentered && isGoodSize);
-              if (isCentered && isGoodSize) {
-                setLastFaceBox({ x: minX, y: minY, w: width, h: height });
-              }
               
               if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
                 const matrix = results.facialTransformationMatrixes[0].data;
                 const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
                 const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
                 
-                // Relaxed head orientation check (from 14 to 22 degrees)
-                setLookStraightGood(Math.abs(yaw) < 22 && Math.abs(pitch) < 22);
+                // Very relaxed head orientation check (25 degrees)
+                setLookStraightGood(Math.abs(yaw) < 25 && Math.abs(pitch) < 25);
               } else {
                 setLookStraightGood(false);
               }
@@ -258,51 +254,20 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   }, [stream]);
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current && lastFaceBox) {
+    if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      
-      // We will crop the image to a square area around the face with some padding
-      // This ensures the face is large enough for the API.
-      const vw = video.videoWidth;
-      const vh = video.videoHeight;
-      
-      // Calculate crop area with 30% padding
-      const padding = 0.3;
-      let cropW = lastFaceBox.w * (1 + padding * 2) * vw;
-      let cropH = lastFaceBox.h * (1 + padding * 2) * vh;
-      
-      // Make it square based on the larger dimension
-      const size = Math.max(cropW, cropH);
-      
-      let centerX = (lastFaceBox.x + lastFaceBox.w / 2) * vw;
-      let centerY = (lastFaceBox.y + lastFaceBox.h / 2) * vh;
-      
-      let sx = centerX - size / 2;
-      let sy = centerY - size / 2;
-      
-      // Clamp to video boundaries
-      if (sx < 0) sx = 0;
-      if (sy < 0) sy = 0;
-      if (sx + size > vw) sx = vw - size;
-      if (sy + size > vh) sy = vh - size;
-      
-      // Ensure we don't go out of bounds if size > video dim
-      const finalSize = Math.min(size, vw, vh);
-
-      canvas.width = 1024; // Force a good resolution for the API
-      canvas.height = 1024;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
-      
       if (ctx) {
-        // Mirror horizontally to match the preview
+        // Mirror the image horizontally to match the preview
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
-        
-        ctx.drawImage(video, sx, sy, finalSize, finalSize, 0, 0, 1024, 1024);
-        
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Reset transformation for future drawings
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         setCapturedImage(dataUrl);
       }
     }
