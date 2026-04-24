@@ -156,11 +156,10 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               const width = maxX - minX;
               const height = maxY - minY;
               
-              // Video is mirrored for user, so x=0 is right and x=1 is left, but center is still ~0.5
-              const isCentered = centerX > 0.35 && centerX < 0.65 && centerY > 0.30 && centerY < 0.70;
-              // Stricter size check to prevent "face too small" error. 
-              // Face must occupy at least 30% of width and 45% of height.
-              const isGoodSize = width > 0.30 && width < 0.55 && height > 0.45 && height < 0.75;
+              // Very forgiving centering check
+              const isCentered = centerX > 0.15 && centerX < 0.85 && centerY > 0.10 && centerY < 0.90;
+              // Very forgiving size check: as long as the face is visible, auto-crop will handle it.
+              const isGoodSize = width > 0.18 && width < 0.70 && height > 0.28 && height < 0.85;
               
               setFacePositionGood(isCentered && isGoodSize);
               if (isCentered && isGoodSize) {
@@ -172,7 +171,8 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
                 const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
                 
-                setLookStraightGood(Math.abs(yaw) < 14 && Math.abs(pitch) < 14);
+                // Relaxed head orientation check (from 14 to 22 degrees)
+                setLookStraightGood(Math.abs(yaw) < 22 && Math.abs(pitch) < 22);
               } else {
                 setLookStraightGood(false);
               }
