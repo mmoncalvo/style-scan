@@ -119,7 +119,7 @@ export const Profile: React.FC<ProfileProps> = ({
               className={`px-6 py-3 text-sm font-bold flex items-center gap-2 transition-all border-b-2 whitespace-nowrap ${activeTab === 'history' ? 'border-[#0B5C66] dark:border-teal-400 text-[#0B5C66] dark:text-teal-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
             >
               <Clock className="w-4 h-4" />
-              Historial ({history.length})
+              Historial ({history?.length || 0})
             </button>
             {user.role === 'admin' && (
               <button
@@ -227,7 +227,7 @@ export const Profile: React.FC<ProfileProps> = ({
             className="space-y-6"
           >
             <div>
-              {history.length > 0 ? (
+              {history && history.length > 0 ? (
                 <History
                   history={history}
                   onSelect={onSelectHistory}

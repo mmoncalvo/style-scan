@@ -182,8 +182,8 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
       )}
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="w-full lg:w-[35%] flex flex-col gap-6">
-          {/* Imagen (Ahora Arriba) */}
-          <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-md relative aspect-square group">
+          {/* Imagen (Ahora Arriba en Desktop, Abajo en Mobile) */}
+          <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-md relative aspect-square group order-2 lg:order-1">
             <img
               src={result.masks?.['resize_image'] || result.imageUrl}
               alt="Analyzed Base"
@@ -202,8 +202,8 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
             </div>
           </div>
 
-          {/* Tarjeta de Score (Ahora Abajo) */}
-          <div className="bg-[#F3F4F6] dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center transition-colors duration-300">
+          {/* Tarjeta de Score (Ahora Abajo en Desktop, Arriba en Mobile) */}
+          <div className="bg-[#F3F4F6] dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col items-center transition-colors duration-300 order-1 lg:order-2">
             <div className="bg-[#0B5C66] w-full rounded-2xl flex flex-col items-center justify-center py-10 shadow-md">
               <div className="w-40 h-40 bg-white dark:bg-slate-800 rounded-full flex flex-col items-center justify-center shadow-lg relative transition-colors duration-300">
                 <svg className="absolute inset-0 w-full h-full -rotate-90">
