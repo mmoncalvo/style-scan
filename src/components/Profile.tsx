@@ -206,7 +206,7 @@ export const Profile: React.FC<ProfileProps> = ({
                 <div className="space-y-4">
                   <div className="flex justify-between items-center py-2 border-b border-teal-200/30 dark:border-teal-900/30">
                     <span className="text-sm text-slate-600 dark:text-slate-400">Total de Análisis</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{history.length}</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{history?.length}</span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b border-teal-200/30 dark:border-teal-900/30">
                     <span className="text-sm text-slate-600 dark:text-slate-400">Rol de Usuario</span>
@@ -227,7 +227,7 @@ export const Profile: React.FC<ProfileProps> = ({
             className="space-y-6"
           >
             <div>
-              {history && history.length > 0 ? (
+              {history && history?.length > 0 ? (
                 <History
                   history={history}
                   onSelect={onSelectHistory}
