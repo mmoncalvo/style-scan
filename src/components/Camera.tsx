@@ -295,7 +295,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   const allGood = lightingGood && facePositionGood && lookStraightGood && sharpnessGood;
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto aspect-[3/4] sm:aspect-[4/5] max-h-[85vh] bg-zinc-100/90 dark:bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-400 dark:border-zinc-800 shadow-2xl">
+    <div className="relative w-full max-w-2xl mx-auto aspect-[3/4] sm:aspect-[4/5] max-h-[85vh] bg-zinc-100/90 dark:bg-zinc-900/90 rounded-lg overflow-hidden border border-zinc-400 dark:border-zinc-800 shadow-2xl">
       <AnimatePresence mode="wait">
         {!capturedImage ? (
           <motion.div
@@ -322,7 +322,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             {!isLoading && !error && (
               <>
                 <div className="absolute inset-0 pointer-events-none flex flex-col items-center pt-6 sm:pt-10 z-20 overflow-hidden">
-                  <div className="flex gap-2 sm:gap-4 bg-black/20 backdrop-blur-xl p-2 rounded-[24px] border border-white/10 shadow-2xl">
+                  <div className="flex gap-2 sm:gap-4 bg-black/20 backdrop-blur-xl p-2 rounded-lg border border-white/10 shadow-2xl">
                     <DiagnosticTag label="Iluminación" active={lightingGood} />
                     <DiagnosticTag label="Enfoque" active={sharpnessGood} />
                     <DiagnosticTag label="Posición" active={facePositionGood} />
@@ -332,7 +332,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 
                 {/* Oval Guía - Centrado absoluto */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-                  <div className={`w-[245px] h-[330px] sm:w-[270px] sm:h-[360px] rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400/50' : 'border-white/30'}`} />
+                  <div className={`w-[220px] h-[300px] sm:w-[260px] sm:h-[340px] rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400/50' : 'border-white/30'}`} />
                 </div>
               </>
             )}
@@ -348,7 +348,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 </div>
                 <button
                   onClick={() => window.open(window.location.href, '_blank')}
-                  className="px-6 py-2 bg-white text-black rounded-full font-medium hover:bg-zinc-200 transition-colors"
+                  className="px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-zinc-200 transition-colors"
                 >
                   Abrir en pestaña nueva
                 </button>
@@ -384,7 +384,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4 z-20">
               <button
                 onClick={handleRetake}
-                className="px-6 py-3 rounded-full bg-zinc-800 text-white flex items-center gap-2 hover:bg-zinc-700 transition-colors"
+                className="px-6 py-3 rounded-lg bg-zinc-800 text-white flex items-center gap-2 hover:bg-zinc-700 transition-colors"
               >
                 <RefreshCw className="w-5 h-5" />
                 Repetir
@@ -392,7 +392,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               <button
                 onClick={handleConfirm}
                 disabled={isAnalyzing}
-                className="px-6 py-3 rounded-full bg-emerald-500 text-white flex items-center gap-2 hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                className="px-6 py-3 rounded-lg bg-emerald-500 text-white flex items-center gap-2 hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50"
               >
                 {isAnalyzing ? (
                   <RefreshCw className="w-5 h-5 animate-spin" />
@@ -413,7 +413,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
 // Componente auxiliar para los tags de diagnóstico con diseño premium
 const DiagnosticTag: React.FC<{ label: string, active: boolean }> = ({ label, active }) => (
   <div className={`
-    flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-500
+    flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-500
     ${active 
       ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' 
       : 'bg-white/5 border-white/10 text-white/40'}
