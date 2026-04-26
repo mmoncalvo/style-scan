@@ -105,7 +105,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                gray[i/4] = val;
              }
              const avg = sum / (sampleSize * sampleSize);
-             setLightingGood(avg > 100 && avg < 220); // Stricter lighting
+             setLightingGood(avg > 60 && avg < 250); 
              
              // Laplacian variance for sharpness (blur detection)
              let laplacianMean = 0;
@@ -131,7 +131,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
              // El umbral se reduce a 40. Las cámaras web (como MacBook) con fuerte
              // suavizado en el hardware producen varianzas muy bajas. 
              // Valores por debajo de 30-40 indicarán movimiento excesivo (motion blur).
-             setSharpnessGood((variance / count) > 40); 
+             setSharpnessGood((variance / count) > 20); 
           }
         }
 
@@ -155,10 +155,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               const width = maxX - minX;
               const height = maxY - minY;
               
-              // Broadened centering check
-              const isCentered = centerX > 0.25 && centerX < 0.75 && centerY > 0.20 && centerY < 0.80;
-              // Broadened size check: easier to pass while remaining safe for the API.
-              const isGoodSize = width > 0.24 && width < 0.55 && height > 0.38 && height < 0.75;
+              // Muy permisivo para centrado y tamaño
+              const isCentered = centerX > 0.20 && centerX < 0.80 && centerY > 0.15 && centerY < 0.85;
+              const isGoodSize = width > 0.20 && width < 0.60 && height > 0.30 && height < 0.80;
               
               setFacePositionGood(isCentered && isGoodSize);
               
@@ -166,9 +165,8 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 const matrix = results.facialTransformationMatrixes[0].data;
                 const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
                 const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
-                
-                // Very relaxed head orientation check (25 degrees)
-                setLookStraightGood(Math.abs(yaw) < 25 && Math.abs(pitch) < 25);
+                // Muy permisivo para orientación (30 grados)
+                setLookStraightGood(Math.abs(yaw) < 30 && Math.abs(pitch) < 30);
               } else {
                 setLookStraightGood(false);
               }
@@ -322,26 +320,21 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             )}
             
             {!isLoading && !error && (
-              <div className="absolute inset-0 pointer-events-none flex flex-col items-center pt-4 sm:pt-6 z-10 overflow-hidden">
-                <div className="flex gap-1.5 sm:gap-3 bg-zinc-900/40 p-1.5 sm:p-2.5 rounded-2xl backdrop-blur-md">
-                  <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-white font-bold text-[9px] sm:text-xs text-center shadow-lg transition-colors duration-300 ${lightingGood ? 'bg-emerald-500/90' : 'bg-rose-500/90'}`}>
-                    Iluminación<br/><span className="text-[8px] sm:text-[9px] opacity-90">{lightingGood ? 'Bien' : 'Mal'}</span>
-                  </div>
-                  <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-white font-bold text-[9px] sm:text-xs text-center shadow-lg transition-colors duration-300 ${lookStraightGood ? 'bg-emerald-500/90' : 'bg-rose-500/90'}`}>
-                    Mirada Frontal<br/><span className="text-[8px] sm:text-[9px] opacity-90">{lookStraightGood ? 'Bien' : 'Mal'}</span>
-                  </div>
-                  <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-white font-bold text-[9px] sm:text-xs text-center shadow-lg transition-colors duration-300 ${facePositionGood ? 'bg-emerald-500/90' : 'bg-rose-500/90'}`}>
-                    Posición<br/><span className="text-[8px] sm:text-[9px] opacity-90">{facePositionGood ? 'Bien' : 'Mal'}</span>
-                  </div>
-                  <div className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-white font-bold text-[9px] sm:text-xs text-center shadow-lg transition-colors duration-300 ${sharpnessGood ? 'bg-emerald-500/90' : 'bg-rose-500/90'}`}>
-                    Nitidez<br/><span className="text-[8px] sm:text-[9px] opacity-90">{sharpnessGood ? 'Bien' : 'Mal'}</span>
+              <>
+                <div className="absolute inset-0 pointer-events-none flex flex-col items-center pt-6 sm:pt-10 z-20 overflow-hidden">
+                  <div className="flex gap-2 sm:gap-4 bg-black/20 backdrop-blur-xl p-2 rounded-[24px] border border-white/10 shadow-2xl">
+                    <DiagnosticTag label="Iluminación" active={lightingGood} />
+                    <DiagnosticTag label="Enfoque" active={sharpnessGood} />
+                    <DiagnosticTag label="Posición" active={facePositionGood} />
+                    <DiagnosticTag label="Mirada" active={lookStraightGood} />
                   </div>
                 </div>
                 
-                <div className="flex-1 flex items-center justify-center pb-16 sm:items-start sm:justify-center sm:pt-6 sm:pb-0">
-                  <div className={`w-[245px] h-[330px] sm:w-[270px] sm:h-[360px] rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400' : 'border-white/80'}`} />
+                {/* Oval Guía - Centrado absoluto */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
+                  <div className={`w-[245px] h-[330px] sm:w-[270px] sm:h-[360px] rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400/50' : 'border-white/30'}`} />
                 </div>
-              </div>
+              </>
             )}
 
             {error && (
@@ -416,3 +409,16 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     </div>
   );
 };
+
+// Componente auxiliar para los tags de diagnóstico con diseño premium
+const DiagnosticTag: React.FC<{ label: string, active: boolean }> = ({ label, active }) => (
+  <div className={`
+    flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-500
+    ${active 
+      ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' 
+      : 'bg-white/5 border-white/10 text-white/40'}
+    border backdrop-blur-md
+  `}>
+    <span className="text-[10px] font-bold tracking-widest uppercase">{label}</span>
+  </div>
+);
