@@ -73,109 +73,99 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
       if (video.readyState >= 2 && video.currentTime !== lastVideoTimeRef.current) {
         lastVideoTimeRef.current = video.currentTime;
         
-         // 1. Lighting and Sharpness Check
-        if (canvasRef.current) {
-          const canvas = canvasRef.current;
-          const ctx = canvas.getContext('2d', { willReadFrequently: true });
-          if (ctx) {
-             const sampleSize = 256; // Increased to 256 for high-res center crop
-             if (canvas.width !== sampleSize) {
-                 canvas.width = sampleSize;
-                 canvas.height = sampleSize;
-             }
-             
-             // Extract an unscaled center crop from the native video resolution
-             const vw = video.videoWidth || 640;
-             const vh = video.videoHeight || 480;
-             const sx = Math.max(0, (vw - sampleSize) / 2);
-             const sy = Math.max(0, (vh - sampleSize) / 2);
-             const sw = Math.min(vw, sampleSize);
-             const sh = Math.min(vh, sampleSize);
-             
-             ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sampleSize, sampleSize);
-             
-             const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
-             const data = imageData.data;
-             
-             let sum = 0;
-             const gray = new Uint8Array(sampleSize * sampleSize);
-             for(let i=0; i<data.length; i+=4) {
-               const val = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
-               sum += val;
-               gray[i/4] = val;
-             }
-             const avg = sum / (sampleSize * sampleSize);
-             setLightingGood(avg > 60 && avg < 250); 
-             
-             // Laplacian variance for sharpness (blur detection)
-             let laplacianMean = 0;
-             const laplacian = new Int16Array(sampleSize * sampleSize);
-             for (let y = 1; y < sampleSize - 1; y++) {
-                 for (let x = 1; x < sampleSize - 1; x++) {
-                     const idx = y * sampleSize + x;
-                     const val = gray[idx - sampleSize] + gray[idx - 1] - 4 * gray[idx] + gray[idx + 1] + gray[idx + sampleSize];
-                     laplacian[idx] = val;
-                     laplacianMean += val;
-                 }
-             }
-             const count = (sampleSize - 2) * (sampleSize - 2);
-             laplacianMean /= count;
-             let variance = 0;
-             for (let y = 1; y < sampleSize - 1; y++) {
-                 for (let x = 1; x < sampleSize - 1; x++) {
-                     const idx = y * sampleSize + x;
-                     const diff = laplacian[idx] - laplacianMean;
-                     variance += diff * diff;
-                 }
-             }
-             // El umbral se reduce a 40. Las cámaras web (como MacBook) con fuerte
-             // suavizado en el hardware producen varianzas muy bajas. 
-             // Valores por debajo de 30-40 indicarán movimiento excesivo (motion blur).
-             setSharpnessGood((variance / count) > 20); 
-          }
-        }
-
-        // 2. Face Position and Look Straight
         try {
-            const results = landmarkerRef.current.detectForVideo(video, performance.now());
+          const results = landmarkerRef.current.detectForVideo(video, performance.now());
+          
+          if (results.faceLandmarks && results.faceLandmarks.length > 0) {
+            const landmarks = results.faceLandmarks[0];
             
-            if (results.faceLandmarks && results.faceLandmarks.length > 0) {
-              const landmarks = results.faceLandmarks[0];
-              
-              let minX = 1, maxX = 0, minY = 1, maxY = 0;
-              landmarks.forEach(p => {
-                if (p.x < minX) minX = p.x;
-                if (p.x > maxX) maxX = p.x;
-                if (p.y < minY) minY = p.y;
-                if (p.y > maxY) maxY = p.y;
-              });
-              
-              const centerX = (minX + maxX) / 2;
-              const centerY = (minY + maxY) / 2;
-              const width = maxX - minX;
-              const height = maxY - minY;
-              
-              // Muy permisivo para centrado y tamaño
-              const isCentered = centerX > 0.20 && centerX < 0.80 && centerY > 0.15 && centerY < 0.85;
-              const isGoodSize = width > 0.20 && width < 0.60 && height > 0.30 && height < 0.80;
-              
-              setFacePositionGood(isCentered && isGoodSize);
-              
-              if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
-                const matrix = results.facialTransformationMatrixes[0].data;
-                const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
-                const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
-                // Muy permisivo para orientación (30 grados)
-                setLookStraightGood(Math.abs(yaw) < 30 && Math.abs(pitch) < 30);
-              } else {
-                setLookStraightGood(false);
-              }
+            let minX = 1, maxX = 0, minY = 1, maxY = 0;
+            landmarks.forEach(p => {
+              if (p.x < minX) minX = p.x;
+              if (p.x > maxX) maxX = p.x;
+              if (p.y < minY) minY = p.y;
+              if (p.y > maxY) maxY = p.y;
+            });
+            
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            const width = maxX - minX;
+            const height = maxY - minY;
+            
+            // 1. Posición y Tamaño (Ajustado para que la cabeza quepa en el óvalo sin estar demasiado cerca)
+            const isCentered = centerX > 0.42 && centerX < 0.58 && centerY > 0.30 && centerY < 0.70;
+            const isGoodSize = width > 0.22 && width < 0.45 && height > 0.35 && height < 0.65;
+            setFacePositionGood(isCentered && isGoodSize);
+            
+            // 2. Orientación
+            if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
+              const matrix = results.facialTransformationMatrixes[0].data;
+              const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
+              const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
+              setLookStraightGood(Math.abs(yaw) < 25 && Math.abs(pitch) < 25);
             } else {
-              setFacePositionGood(false);
               setLookStraightGood(false);
             }
+
+            // 3. Iluminación y Enfoque (Crop dinámico sobre la cara)
+            if (canvasRef.current) {
+              const canvas = canvasRef.current;
+              const ctx = canvas.getContext('2d', { willReadFrequently: true });
+              if (ctx) {
+                const sampleSize = 160;
+                if (canvas.width !== sampleSize) {
+                  canvas.width = sampleSize;
+                  canvas.height = sampleSize;
+                }
+
+                const vw = video.videoWidth || 640;
+                const vh = video.videoHeight || 480;
+                
+                const sx = Math.max(0, Math.min(vw - sampleSize, centerX * vw - sampleSize / 2));
+                const sy = Math.max(0, Math.min(vh - sampleSize, centerY * vh - sampleSize / 2));
+                
+                ctx.drawImage(video, sx, sy, sampleSize, sampleSize, 0, 0, sampleSize, sampleSize);
+                const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+                const data = imageData.data;
+                
+                let bSum = 0;
+                const gray = new Uint8Array(sampleSize * sampleSize);
+                for(let i=0; i<data.length; i+=4) {
+                  const v = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+                  bSum += v;
+                  gray[i/4] = v;
+                }
+                
+                const avgB = bSum / (sampleSize * sampleSize);
+                setLightingGood(avgB > 70 && avgB < 230);
+
+                let lapSum = 0;
+                let lapSqSum = 0;
+                const count = (sampleSize - 2) * (sampleSize - 2);
+                
+                for (let y = 1; y < sampleSize - 1; y++) {
+                  for (let x = 1; x < sampleSize - 1; x++) {
+                    const idx = y * sampleSize + x;
+                    const lap = gray[idx - sampleSize] + gray[idx - 1] - 4 * gray[idx] + gray[idx + 1] + gray[idx + sampleSize];
+                    lapSum += lap;
+                    lapSqSum += lap * lap;
+                  }
+                }
+                
+                const lMean = lapSum / count;
+                const lVar = (lapSqSum / count) - (lMean * lMean);
+                // Umbral ajustado a 40 para ser más permisivo pero capturar borrosidad real
+                setSharpnessGood(lVar > 40);
+              }
+            }
+          } else {
+            setFacePositionGood(false);
+            setLookStraightGood(false);
+            setLightingGood(false);
+            setSharpnessGood(false);
+          }
         } catch (e) {
-            console.error("Error detecting face:", e);
+          console.error("Error in diagnostics:", e);
         }
       }
     }

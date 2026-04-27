@@ -262,7 +262,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
         </div>
 
         {/* Right: Analyzed Image (60%) */}
-        <div className="bg-slate-900 rounded-lg overflow-hidden shadow-2xl relative aspect-[4/3] lg:aspect-auto group border border-slate-800">
+        <div className="bg-slate-900 rounded-lg overflow-hidden shadow-2xl relative aspect-[3/4] lg:aspect-auto group border border-slate-800">
           <img
             src={result.masks?.['resize_image'] || result.imageUrl}
             alt="Analyzed Base"
@@ -323,7 +323,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
         <div className="relative group">
           <div 
             ref={carouselRef}
-            className="overflow-x-auto no-scrollbar flex gap-4 pb-6 px-2 snap-x scroll-smooth"
+            className="overflow-x-auto scrollbar-hide flex gap-6 pb-6 px-4 snap-x scroll-smooth justify-start md:justify-center"
           >
             {metrics.map((metric, idx) => (
               <motion.div
@@ -333,14 +333,14 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
                 transition={{ delay: idx * 0.05 }}
                 onClick={() => setActiveLayer(activeLayer === metric.type ? null : metric.type)}
                 className={`
-                  flex-shrink-0 snap-start w-32 p-4 rounded-lg border transition-all duration-300 cursor-pointer text-center flex flex-col items-center gap-3
+                  flex-shrink-0 snap-start w-28 p-3 rounded-lg border transition-all duration-300 cursor-pointer text-center flex flex-col items-center justify-center gap-2
                   ${activeLayer === metric.type 
                     ? 'bg-[#0B5C66] border-[#0B5C66] text-white shadow-xl shadow-[#0B5C66]/20' 
                     : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-teal-200 dark:hover:border-teal-800'}
                 `}
               >
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${activeLayer === metric.type ? 'bg-white/20' : 'bg-teal-50 dark:bg-teal-900/30'}`}>
-                  <metric.icon className={`w-6 h-6 ${activeLayer === metric.type ? 'text-white' : 'text-[#0B5C66] dark:text-teal-400'}`} />
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${activeLayer === metric.type ? 'bg-white/20' : 'bg-teal-50 dark:bg-teal-900/30'}`}>
+                  <metric.icon className={`w-5 h-5 ${activeLayer === metric.type ? 'text-white' : 'text-[#0B5C66] dark:text-teal-400'}`} />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black uppercase tracking-wider mb-1">{metric.label}</span>
