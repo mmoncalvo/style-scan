@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import axios from 'axios';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -267,21 +268,48 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
       return res.json(savedAnalysis);
     }
 
-    console.log(`[analyze] Starting task for file: ${req.file.filename} (using Base64)`);
+    console.log(`[analyze] Starting task for file: ${req.file.filename}`);
 
-    // 1. Construct the public image URL so Perfect Corp can download it
-    const appUrl = process.env.APP_URL || "http://localhost:3000";
-    const cleanAppUrl = appUrl.replace(/\/$/, "");
-    const publicImageUrl = `${cleanAppUrl}/uploads/${req.file.filename}`;
+    // 1. Register file to get upload URL and file_id
+    const registerFileUrl = `${baseUrl}/file/skin-analysis`;
+    console.log(`[analyze] Registering file at ${registerFileUrl}`);
+    const registerResponse = await axios.post(registerFileUrl, {
+      files: [{
+        file_name: req.file.filename,
+        file_size: req.file.size,
+        content_type: req.file.mimetype
+      }]
+    }, {
+      headers: {
+        "Authorization": `Bearer ${apiKey}`
+      }
+    });
 
-    console.log(`[analyze] Public Image URL for API: ${publicImageUrl}`);
+    // The response structure typically has an array of files
+    const fileData = registerResponse.data?.data?.files?.[0];
+    const fileId = fileData?.file_id;
+    const uploadUrl = fileData?.requests?.[0]?.url;
 
-    // 2. Start Task (POST)
-    console.log(`[analyze] Sending POST to ${startTaskUrl}`);
+    if (!fileId || !uploadUrl) {
+      throw new Error(`Failed to get fileId or uploadUrl: ${JSON.stringify(registerResponse.data)}`);
+    }
+
+    // 2. Upload file to the provided URL
+    console.log(`[analyze] Uploading file to S3 via pre-signed URL`);
+    const imagePath = req.file.path;
+    const imageData = fs.readFileSync(imagePath);
+    await axios.put(uploadUrl, imageData, {
+      headers: {
+        "Content-Type": req.file.mimetype
+      }
+    });
+
+    // 3. Start Task (POST)
+    console.log(`[analyze] Sending POST to ${startTaskUrl} with src_file_id: ${fileId}`);
     let startResponse;
     try {
       startResponse = await axios.post(startTaskUrl, {
-        src_file_url: publicImageUrl,
+        src_file_id: fileId,
         dst_actions: [
           "wrinkle", "pore", "texture", "acne", "oiliness",
           "eye_bag", "age_spot", "dark_circle_v2",

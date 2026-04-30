@@ -92,9 +92,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             const width = maxX - minX;
             const height = maxY - minY;
             
-            // 1. Posición y Tamaño (Ajustado para que la cabeza quepa en el óvalo sin estar demasiado cerca)
-            const isCentered = centerX > 0.42 && centerX < 0.58 && centerY > 0.30 && centerY < 0.70;
-            const isGoodSize = width > 0.22 && width < 0.45 && height > 0.35 && height < 0.65;
+            // 1. Posición y Tamaño (Ajustado para que la cabeza esté más cerca del lente)
+            const isCentered = centerX > 0.40 && centerX < 0.60 && centerY > 0.30 && centerY < 0.70;
+            const isGoodSize = width > 0.40 && width < 0.85 && height > 0.55 && height < 0.90;
             setFacePositionGood(isCentered && isGoodSize);
             
             // 2. Orientación
@@ -320,9 +320,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                   </div>
                 </div>
                 
-                {/* Oval Guía - Centrado absoluto */}
+                {/* Oval Guía - Centrado absoluto y aumentado de tamaño para forzar cercanía */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-                  <div className={`w-[220px] h-[300px] sm:w-[260px] sm:h-[340px] rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400/50' : 'border-white/30'}`} />
+                  <div className={`w-[280px] h-[380px] sm:w-[340px] sm:h-[460px] rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400/50' : 'border-white/30'}`} />
                 </div>
               </>
             )}
