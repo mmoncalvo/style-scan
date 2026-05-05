@@ -9,7 +9,7 @@ export PATH="$NODE_PATH:$PATH"
 cd "$PROJECT_DIR"
 
 # Wait a few seconds for system services to be ready
-sleep 10
+sleep 60
 
 echo "$(date): Starting style-scan server loop..." >> server.log
 
@@ -18,5 +18,5 @@ while true; do
     echo "$(date): Launching npm run dev" >> server.log
     npm run dev >> server.log 2>&1
     echo "$(date): Server stopped with exit code $?. Restarting in 5 seconds..." >> server.log
-    sleep 5
+    sleep 10
 done
