@@ -159,9 +159,6 @@ export default function App() {
         color: 'var(--color-white)',
         marginLeft: 10,
       },
-      style: {
-        width: '100%',
-      },
       classNames: {
         content: '!px-2',
       },
@@ -186,7 +183,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans selection:bg-[#0B5C66]/30 transition-colors duration-300">
-      <Toaster style={{ width: '100%', maxWidth: '600px', margin: '0 auto', left: 0, right: 0 }} theme={darkMode ? 'dark' : 'light'} position="top-center" />
+      <Toaster theme={darkMode ? 'dark' : 'light'} position="top-center" />
 
       <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
