@@ -43,7 +43,7 @@ async function downloadImages() {
             try {
               const response = await axios.get(url, { responseType: 'arraybuffer', timeout: 5000 });
               const contentType = response.headers['content-type'];
-              if (response.status === 200 && contentType && contentType.startsWith('image/')) {
+              if (response.status === 200 && typeof contentType === 'string' && contentType.startsWith('image/')) {
                 fs.writeFileSync(filepath, response.data);
                 success = true;
                 break;

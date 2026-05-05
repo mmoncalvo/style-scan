@@ -37,7 +37,12 @@ export const History: React.FC<HistoryProps> = ({ history, onSelect, onDelete })
             className="w-full flex items-center gap-4 p-4 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl shadow-sm hover:shadow-md dark:hover:shadow-slate-900/50 hover:border-teal-100 dark:hover:border-teal-900/50 transition-all group text-left cursor-pointer transition-colors duration-300"
           >
             <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800 transition-colors duration-300">
-              <img src={item.imageUrl} alt="History" className="w-full h-full object-cover" />
+              <img 
+                src={item.imageUrl ? item.imageUrl.replace('/uploads/', '/uploads/thumbs/') : ''} 
+                onError={(e) => { (e.target as HTMLImageElement).src = item.imageUrl; }}
+                alt="History" 
+                className="w-full h-full object-cover" 
+              />
             </div>
             <div className="flex-grow min-w-0">
               <div className="text-slate-800 dark:text-white font-bold truncate">Análisis {item.skinType}</div>

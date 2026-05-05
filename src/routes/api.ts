@@ -6,6 +6,7 @@ import axios from 'axios';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Analysis, User, Product } from '../config/database.js'; // tsx resolves this seamlessly
+import sharp from 'sharp';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -219,6 +220,17 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
       return res.status(400).json({ error: "No image uploaded" });
     }
 
+    // Generate thumbnail
+    try {
+      const thumbPath = path.join(process.cwd(), 'uploads', 'thumbs', req.file.filename);
+      await sharp(req.file.path)
+        .resize(200, 200, { fit: 'cover' })
+        .toFile(thumbPath);
+      console.log(`[analyze] Thumbnail generated: ${thumbPath}`);
+    } catch (err) {
+      console.error(`[analyze] Failed to generate thumbnail:`, err);
+    }
+
     // Extract userId if token is present
     let userId = null;
     const authHeader = req.headers.authorization;
@@ -236,37 +248,36 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
     const baseUrl = process.env.PERFECT_CORP_API_URL || "https://yce-api-01.makeupar.com/s2s/v2.0";
     const startTaskUrl = `${baseUrl}/task/skin-analysis`;
 
-    if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
-      console.warn("Using mock data because PERFECT_CORP_API_KEY is not configured.");
-      // Mock data fallback
-      const mockData = {
-        skinScore: 85,
-        skinAge: 25,
-        skinType: "Normal",
-        spots: 10,
-        wrinkles: 5,
-        texture: 15,
-        darkCircles: 20,
-        pores: 12,
-        redness: 8,
-        oiliness: 10,
-        moisture: 70,
-        eyebag: 5,
-        droopyEyelid: 2,
-        droopyLowerEyelid: 3,
-        firmness: 88,
-        radiance: 75,
-        acne: 0
-      };
+    // if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
+    //   console.warn("Using mock data because PERFECT_CORP_API_KEY is not configured.");
+    //   // Mock data fallback
+    //   const mockData = {
+    //     skinScore: 85,
+    //     skinAge: 25,
+    //     skinType: "Normal",
+    //     spots: 10,
+    //     wrinkles: 5,
+    //     texture: 15,
+    //     darkCircles: 20,
+    //     pores: 12,
+    //     redness: 8,
+    //     oiliness: 10,
+    //     moisture: 70,
+    //     eyebag: 5,
+    //     droopyEyelid: 2,
+    //     droopyLowerEyelid: 3,
+    //     firmness: 88,
+    //     radiance: 75,
+    //     acne: 0
+    //   };
 
-      const savedAnalysis = await Analysis.create({
-        ...mockData,
-        userId,
-        imageUrl: `/uploads/${req.file.filename}`,
-        rawResponse: JSON.stringify(mockData)
-      });
-      return res.json(savedAnalysis);
-    }
+    //   const savedAnalysis = await Analysis.create({
+    //     ...mockData,
+    //     userId,
+    //     imageUrl: `/uploads/${req.file.filename}`
+    //   });
+    //   return res.json(savedAnalysis);
+    // }
 
     console.log(`[analyze] Starting task for file: ${req.file.filename}`);
 
@@ -330,18 +341,35 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
       if (err.response?.data?.error_code === 'CreditInsufficiency') {
         console.warn("[analyze] API key out of credits! Falling back to mock data.");
         const mockData = {
-          skinScore: 82, skinAge: 27, skinType: "Mixta", spots: 8, wrinkles: 12,
-          texture: 18, darkCircles: 25, pores: 14, redness: 10, oiliness: 20,
-          moisture: 65, eyebag: 15, droopyEyelid: 5, droopyLowerEyelid: 6, 
-          firmness: 70, radiance: 60, acne: 3
+          // skinScore: 82, skinAge: 27, skinType: "Mixta", spots: 8, wrinkles: 12,
+          // texture: 18, darkCircles: 25, pores: 14, redness: 10, oiliness: 20,
+          // moisture: 65, eyebag: 15, droopyEyelid: 5, droopyLowerEyelid: 6,
+          // firmness: 70, radiance: 60, acne: 3
+          skinScore: 85,
+          skinAge: 25,
+          skinType: "Normal",
+          spots: 10,
+          wrinkles: 5,
+          texture: 15,
+          darkCircles: 20,
+          pores: 12,
+          redness: 8,
+          oiliness: 10,
+          moisture: 70,
+          eyebag: 5,
+          droopyEyelid: 2,
+          droopyLowerEyelid: 3,
+          firmness: 88,
+          radiance: 75,
+          acne: 0
+
         };
         const savedAnalysis = await Analysis.create({
           ...mockData,
           userId,
           masks: "{}",
           isMock: true,
-          imageUrl: `/uploads/${req.file.filename}`,
-          rawResponse: JSON.stringify(err.response.data)
+          imageUrl: `/uploads/${req.file.filename}`
         });
 
         const jsonRes = savedAnalysis.toJSON();
@@ -415,13 +443,13 @@ router.post("/analyze", upload.single('image'), async (req: any, res: any) => {
       ...analysisData,
       userId,
       masks: JSON.stringify(masksObj),
-      imageUrl: `/uploads/${req.file.filename}`,
-      rawResponse: JSON.stringify(results)
+      imageUrl: `/uploads/${req.file.filename}`
     });
 
     const jsonRes = savedAnalysis.toJSON();
     try {
       jsonRes.masks = JSON.parse(jsonRes.masks);
+      delete jsonRes.masks.resize_image;
     } catch (e) {
       jsonRes.masks = {};
     }
@@ -444,7 +472,8 @@ router.get("/history", async (req: any, res: any) => {
     const history = await Analysis.findAll({
       where: { userId: null },
       order: [['createdAt', 'DESC']],
-      limit: 20
+      limit: 20,
+      attributes: { exclude: ['masks'] }
     });
     const parsedHistory = history.map((record: any) => {
       const jsonRecord = record.toJSON();
@@ -469,7 +498,8 @@ router.get("/my-history", authenticate, async (req: any, res: any) => {
     const history = await Analysis.findAll({
       where: { userId: req.user.id },
       order: [['updatedAt', 'DESC']],
-      limit: 50
+      limit: 50,
+      attributes: { exclude: ['masks'] }
     });
     const parsedHistory = history.map((record: any) => {
       const jsonRecord = record.toJSON();
@@ -485,6 +515,34 @@ router.get("/my-history", authenticate, async (req: any, res: any) => {
     res.json(parsedHistory);
   } catch (error: any) {
     res.status(500).json({ error: "Failed to fetch user history", details: error.message });
+  }
+});
+
+router.get("/analysis/:id", async (req: any, res: any) => {
+  try {
+    console.log(`>>> [api/analysis] Fetching analysis details for ${req.params.id}...`);
+    const record: any = await Analysis.findOne({
+      where: { id: req.params.id }
+    });
+    if (!record) {
+      return res.status(404).json({ error: "Analysis not found" });
+    }
+
+    // Optional: add security check here if we want to ensure userId matches
+    // But for now, we just return the analysis data since history relies on knowing the ID.
+
+    const jsonRecord = record.toJSON();
+    try {
+      if (typeof jsonRecord.masks === 'string') {
+        jsonRecord.masks = JSON.parse(jsonRecord.masks);
+        delete jsonRecord.masks.resize_image;
+      }
+    } catch (e) {
+      jsonRecord.masks = {};
+    }
+    res.json(jsonRecord);
+  } catch (error: any) {
+    res.status(500).json({ error: "Failed to fetch analysis details", details: error.message });
   }
 });
 

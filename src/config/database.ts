@@ -13,12 +13,6 @@ export const sequelize = new Sequelize({
   dialectModule: sqlite3Verbose,
   logging: false
 });
-// console.log(">>> [init] Configuring Sequelize for MySQL...");
-// export const sequelize = new Sequelize('style-scan', 'root', 'root', {
-//   host: 'localhost',
-//   dialect: 'mysql',
-//   logging: false
-// });
 
 export const User = sequelize.define('User', {
   id: {
@@ -71,7 +65,6 @@ export const Analysis = sequelize.define('Analysis', {
   radiance: DataTypes.INTEGER,
   acne: DataTypes.INTEGER,
   imageUrl: DataTypes.STRING,
-  rawResponse: DataTypes.TEXT,
   masks: DataTypes.TEXT,
   isMock: {
     type: DataTypes.BOOLEAN,
@@ -80,6 +73,10 @@ export const Analysis = sequelize.define('Analysis', {
 });
 
 export const Product = sequelize.define('Product', {
+  id: {
+    type: DataTypes.STRING,
+    primaryKey: true
+  },
   target: {
     type: DataTypes.STRING,
     allowNull: false

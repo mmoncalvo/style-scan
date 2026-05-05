@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "setup": "tsx setup.ts",
+    "export-data": "tsx scripts/export-to-seed.ts",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -34,6 +35,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sequelize": "^6.37.8",
+    "sharp": "^0.34.5",
     "sonner": "^1.7.4",
     "sqlite3": "^6.0.1",
     "vite": "^6.2.0"

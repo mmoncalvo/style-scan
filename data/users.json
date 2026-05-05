@@ -1,0 +1,32 @@
+[
+  {
+    "id": "7e6a5529-66d0-456d-bd7d-d6c1161bd9b3",
+    "username": "admin",
+    "password": "$2b$10$W/mZDJO5BaMk4ghG/VkR2OvrgCyUhBTFU.NR65gO1DGqIINIGNJ16",
+    "role": "admin",
+    "fullName": "Administrador",
+    "email": "admin@example.com",
+    "createdAt": "2026-04-24T22:09:41.322Z",
+    "updatedAt": "2026-04-24T22:09:41.322Z"
+  },
+  {
+    "id": "def75906-3320-4f65-b99b-e62356e367a5",
+    "username": "cliente",
+    "password": "$2b$10$/YhiODmyChCf8qFX4qU9UuJHRcN2V1DbarqRyvB1qTTgfw95/8c6W",
+    "role": "cliente",
+    "fullName": "Cliente de Prueba",
+    "email": "cliente@example.com",
+    "createdAt": "2026-04-24T22:09:41.446Z",
+    "updatedAt": "2026-04-24T22:09:41.446Z"
+  },
+  {
+    "id": "c2ae05d7-42c4-4495-9d8d-af27c9af1df1",
+    "username": "mmoncalvo",
+    "password": "$2b$10$PU3HIkqwfxbEkCi3gc3YI.t/85c5f6CX5h0lSOTlIi77XucrUPQXa",
+    "role": "cliente",
+    "fullName": "marco moncalvo",
+    "email": "m_moncalvo@hotmail.com",
+    "createdAt": "2026-04-25T18:29:09.990Z",
+    "updatedAt": "2026-04-25T18:29:09.990Z"
+  }
+]

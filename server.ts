@@ -33,11 +33,16 @@ async function startServer() {
       console.error(chalk.red(">>> [startServer] Failed to generate certificates:"), e.message);
     }
   }
+
   // Ensure uploads directory exists
   const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
   try {
     if (!fs.existsSync(UPLOADS_DIR)) {
       fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    }
+    const THUMBS_DIR = path.join(UPLOADS_DIR, 'thumbs');
+    if (!fs.existsSync(THUMBS_DIR)) {
+      fs.mkdirSync(THUMBS_DIR, { recursive: true });
     }
     fs.accessSync(UPLOADS_DIR, fs.constants.W_OK);
     console.log(chalk.cyan(">>> [init] Uploads directory is writable."));

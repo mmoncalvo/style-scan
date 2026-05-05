@@ -135,15 +135,36 @@ export default function App() {
     }
   };
 
-  const handleSelectHistory = (result: SkinAnalysis) => {
-    setCurrentResult(result);
-    setView('result');
+  const handleSelectHistory = async (result: SkinAnalysis) => {
+    try {
+      toast.loading("Cargando detalles...", { id: "loading-details" });
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+      const response = await axios.get(`/api/analysis/${result.id}`, config);
+      toast.dismiss("loading-details");
+      setCurrentResult(response.data);
+      setView('result');
+    } catch (err) {
+      console.error("Error fetching analysis details:", err);
+      toast.dismiss("loading-details");
+      toast.error("No se pudieron cargar los detalles del análisis.");
+    }
   };
 
   const handleDeleteHistory = async (id: string) => {
     toast('¿Estás seguro de que deseas eliminar este análisis?', {
       description: 'Esta acción no se puede deshacer.',
       icon: <AlertCircle className="w-5 h-5 text-red-500" />,
+      actionButtonStyle: {
+        backgroundColor: 'var(--color-red-600)',
+        color: 'var(--color-white)',
+        marginLeft: 10,
+      },
+      style: {
+        width: '100%',
+      },
+      classNames: {
+        content: '!px-2',
+      },
       action: {
         label: 'Eliminar',
         onClick: async () => {
@@ -165,7 +186,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans selection:bg-[#0B5C66]/30 transition-colors duration-300">
-      <Toaster theme={darkMode ? 'dark' : 'light'} position="top-center" />
+      <Toaster style={{ width: '100%', maxWidth: '600px', margin: '0 auto', left: 0, right: 0 }} theme={darkMode ? 'dark' : 'light'} position="top-center" />
 
       <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -311,7 +332,8 @@ export default function App() {
               onSelectHistory={handleSelectHistory}
               onDeleteHistory={handleDeleteHistory}
             />
-          )}        </AnimatePresence>
+          )}
+        </AnimatePresence>
       </main>
 
       <footer className="border-t border-gray-200 dark:border-slate-800 py-12 mt-5 bg-white dark:bg-slate-900 transition-colors duration-300">

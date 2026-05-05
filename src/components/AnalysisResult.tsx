@@ -36,6 +36,7 @@ const targetLabels: Record<string, string> = {
 };
 
 export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProducts }) => {
+  console.log("🚀 ~ AnalysisResult ~ result:", result)
   const [activeLayer, setActiveLayer] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const carouselRef = React.useRef<HTMLDivElement>(null);
@@ -203,11 +204,11 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
       className="max-w-7xl mx-auto space-y-10"
     >
       {result.isMock && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-center gap-3"
-          >
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-center gap-3"
+        >
           <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
           <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
             Estos son datos de ejemplo. La API no está configurada para realizar análisis reales.
@@ -222,16 +223,16 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
           <div className="bg-[#0B5C66] w-full rounded-lg flex flex-col items-center justify-center py-12 shadow-xl mb-8">
             <div className="w-48 h-48 bg-white dark:bg-slate-800 rounded-full flex flex-col items-center justify-center shadow-inner relative">
               <svg className="absolute inset-0 w-full h-full -rotate-90">
-                <circle 
-                  cx="96" 
-                  cy="96" 
-                  r="90" 
-                  stroke="#059669" 
-                  strokeWidth="10" 
-                  fill="none" 
-                  strokeDasharray="565" 
-                  strokeDashoffset={565 - (565 * result.skinScore) / 100} 
-                  className="transition-all duration-1000 ease-out" 
+                <circle
+                  cx="96"
+                  cy="96"
+                  r="90"
+                  stroke="#059669"
+                  strokeWidth="10"
+                  fill="none"
+                  strokeDasharray="565"
+                  strokeDashoffset={565 - (565 * result.skinScore) / 100}
+                  className="transition-all duration-1000 ease-out"
                 />
               </svg>
               <div className="flex flex-col items-center">
@@ -243,7 +244,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
               </div>
             </div>
           </div>
-          
+
           <div className="text-center space-y-4 max-w-sm">
             <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Estado General</h3>
             <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
@@ -264,7 +265,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
         {/* Right: Analyzed Image (60%) */}
         <div className="bg-slate-900 rounded-lg overflow-hidden shadow-2xl relative aspect-[3/4] lg:aspect-auto group border border-slate-800">
           <img
-            src={result.masks?.['resize_image'] || result.imageUrl}
+            src={result.imageUrl}
             alt="Analyzed Base"
             className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${activeLayer ? 'brightness-[0.6] saturate-[0.8]' : 'brightness-100'}`}
           />
@@ -281,12 +282,12 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
             )}
           </AnimatePresence>
           <div className="absolute top-6 left-6 z-20">
-             <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${activeLayer ? 'bg-teal-400 animate-pulse' : 'bg-white/40'}`} />
-                <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                  {activeLayer ? `Visualizando: ${targetLabels[activeLayer] || activeLayer}` : 'Vista Original'}
-                </span>
-             </div>
+            <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${activeLayer ? 'bg-teal-400 animate-pulse' : 'bg-white/40'}`} />
+              <span className="text-[10px] font-bold text-white uppercase tracking-widest">
+                {activeLayer ? `Visualizando: ${targetLabels[activeLayer] || activeLayer}` : 'Vista Original'}
+              </span>
+            </div>
           </div>
           <div className="absolute bottom-6 right-6 z-20 flex items-center gap-3 text-white/70 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-[10px] font-bold tracking-widest uppercase border border-white/5">
             <Clock className="w-3.5 h-3.5" />
@@ -319,9 +320,9 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
             </button>
           </div>
         </div>
-        
+
         <div className="relative group">
-          <div 
+          <div
             ref={carouselRef}
             className="overflow-x-auto scrollbar-hide flex gap-6 pb-6 px-4 snap-x scroll-smooth justify-start md:justify-center"
           >
@@ -334,8 +335,8 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
                 onClick={() => setActiveLayer(activeLayer === metric.type ? null : metric.type)}
                 className={`
                   flex-shrink-0 snap-start w-28 p-3 rounded-lg border transition-all duration-300 cursor-pointer text-center flex flex-col items-center justify-center gap-2
-                  ${activeLayer === metric.type 
-                    ? 'bg-[#0B5C66] border-[#0B5C66] text-white shadow-xl shadow-[#0B5C66]/20' 
+                  ${activeLayer === metric.type
+                    ? 'bg-[#0B5C66] border-[#0B5C66] text-white shadow-xl shadow-[#0B5C66]/20'
                     : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-teal-200 dark:hover:border-teal-800'}
                 `}
               >
@@ -399,7 +400,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
                   <p className="text-slate-500 dark:text-slate-400 text-xs line-clamp-2 leading-relaxed">{product.description}</p>
                   <div className="mt-auto pt-4 flex items-center justify-between">
                     <span className="text-lg font-black text-[#0B5C66] dark:text-teal-400">${product.price.toFixed(2)}</span>
-                    <button 
+                    <button
                       onClick={() => setSelectedProduct(product)}
                       className="p-2.5 rounded-lg bg-white dark:bg-slate-800 text-[#0B5C66] dark:text-teal-400 border border-gray-100 dark:border-slate-700 hover:bg-[#0B5C66] hover:text-white hover:border-[#0B5C66] transition-all shadow-sm"
                     >
@@ -443,7 +444,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
               >
                 <X className="w-6 h-6 text-slate-500 dark:text-slate-400" />
               </button>
-              
+
               <div className="overflow-y-auto no-scrollbar rounded-lg">
                 <div className="flex flex-col lg:flex-row">
                   <div className="lg:w-1/2 relative bg-gray-50 dark:bg-slate-800 aspect-square lg:aspect-auto">
