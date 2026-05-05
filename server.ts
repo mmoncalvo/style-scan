@@ -54,7 +54,6 @@ async function startServer() {
   app.use(express.json());
   app.use('/uploads', express.static('uploads'));
   app.use('/data/images', express.static(path.join(process.cwd(), 'data/images')));
-  app.use('/node_modules/eruda', express.static(path.join(process.cwd(), 'node_modules/eruda')));
   
   // API Routes
   app.use('/api', apiRoutes);
