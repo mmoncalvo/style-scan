@@ -148,11 +148,10 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             const isCenteredX = centerX > 0.45 && centerX < 0.55;
             const isCenteredY = centerY > 0.40 && centerY < 0.60;
             
-            // El rostro debe tener un tamaño "ideal" para garantizar resolución en el análisis
-            // En vertical (móvil), el rostro debería ocupar ~50-70% de la altura
-            // En horizontal (laptop), el rostro debería ocupar ~40-60% de la altura
-            const idealHeightMin = isLandscape ? 0.45 : 0.50;
-            const idealHeightMax = isLandscape ? 0.70 : 0.85;
+            // Incrementamos los requisitos de tamaño para evitar "error_src_face_too_small"
+            // El rostro debe ocupar al menos el 60-65% de la altura para que la API de Perfect Corp lo procese bien
+            const idealHeightMin = isLandscape ? 0.55 : 0.60;
+            const idealHeightMax = isLandscape ? 0.80 : 0.90;
             const isGoodDistance = faceHeight > idealHeightMin && faceHeight < idealHeightMax;
 
             updateStableDiagnostic('position', isCenteredX && isCenteredY && isGoodDistance);
@@ -337,32 +336,52 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       
-      // Aseguramos que el canvas tenga exactamente la resolución del stream de video
-      const width = video.videoWidth;
-      const height = video.videoHeight;
-      canvas.width = width;
-      canvas.height = height;
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      
+      // La UI usa aspect-[3/4] o aspect-[4/5]. 
+      // Para maximizar el tamaño del rostro para la API, forzamos un recorte central 
+      // que coincida con lo que el usuario ve en el contenedor 'object-cover'.
+      const targetAspect = 3 / 4; // El aspecto más común en la UI
+      
+      let sWidth, sHeight, sx, sy;
+      
+      if (vw / vh > targetAspect) {
+        // Video es más ancho que el target (típico en Mac/Laptops 16:9)
+        sHeight = vh;
+        sWidth = vh * targetAspect;
+        sx = (vw - sWidth) / 2;
+        sy = 0;
+      } else {
+        // Video es más alto que el target
+        sWidth = vw;
+        sHeight = vw / targetAspect;
+        sx = 0;
+        sy = (vh - sHeight) / 2;
+      }
+
+      // El canvas final tendrá una resolución alta pero con el aspecto correcto
+      canvas.width = 1200;
+      canvas.height = 1600;
       
       const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
       if (ctx) {
-        // Mejorar calidad de escalado si fuera necesario (aunque aquí es 1:1)
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // Espejar la imagen para que coincida con lo que el usuario ve
+        // Espejar y dibujar solo la porción central
         ctx.save();
-        ctx.translate(width, 0);
+        ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, width, height);
+        ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
         ctx.restore();
 
-        // Usar toBlob en lugar de toDataURL para mejor manejo de memoria y calidad
         canvas.toBlob((blob) => {
           if (blob) {
             const url = URL.createObjectURL(blob);
             setCapturedImage(url);
           }
-        }, 'image/jpeg', 0.95); // Aumentamos calidad a 0.95
+        }, 'image/jpeg', 0.95);
       }
     }
   }, []);
@@ -469,7 +488,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                       scale: allGood ? 1.02 : 1,
                       borderColor: allGood ? 'rgba(52, 211, 153, 0.8)' : 'rgba(255, 255, 255, 0.2)'
                     }}
-                    className="w-[280px] h-[380px] sm:w-[320px] sm:h-[440px] rounded-[140px/190px] sm:rounded-[160px/220px] border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] transition-colors duration-500"
+                    className="w-[300px] h-[420px] sm:w-[360px] sm:h-[500px] rounded-[150px/210px] sm:rounded-[180px/250px] border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] transition-colors duration-500"
                   >
                     {/* Corner accents */}
                     <div className="absolute inset-0 border-2 border-transparent rounded-[inherit]">
@@ -499,11 +518,11 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 <div className="absolute bottom-28 inset-x-0 text-center z-30 px-6">
                   <p className="text-white/80 text-sm font-medium drop-shadow-md">
                     {allGood 
-                      ? "Mantente quieto, capturando..." 
-                      : "Ubica tu rostro dentro del óvalo y busca buena iluminación"}
+                      ? "¡Perfecto! Mantente así..." 
+                      : "Acerca tu rostro y encájalo en el óvalo"
+                    }
                   </p>
-                </div>
-              </>
+                </div>              </>
             )}
 
             {error && (
@@ -555,9 +574,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="relative w-full h-full bg-black"
+            className="relative w-full h-full bg-zinc-950 flex items-center justify-center"
           >
-            <img src={capturedImage} alt="Captured" className="w-full h-full object-contain" />
+            <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />
             
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
