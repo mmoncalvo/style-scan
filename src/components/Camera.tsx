@@ -44,7 +44,8 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     sharpness: 0
   });
 
-  const STABILITY_THRESHOLD = 12; // ~400ms a 30fps para asegurar que el usuario esté quieto
+  const STABILITY_THRESHOLD = 15; // ~500ms para validación inicial
+  const SHARPNESS_GRACE_FRAMES = 8; // Permitir ~250ms de desenfoque momentáneo antes de invalidar
 
   const updateStableDiagnostic = useCallback((key: keyof typeof diagnostics, value: boolean) => {
     setDiagnostics(prev => ({ ...prev, [key]: value }));
@@ -58,13 +59,28 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
         });
       }
     } else {
-      stabilityCounters.current[key] = 0;
-      setStableDiagnostics(prev => {
-        if (!prev[key]) return prev;
-        return { ...prev, [key]: false };
-      });
+      // Lógica de "Gracia" especial para el enfoque para evitar parpadeos constantes
+      if (key === 'sharpness') {
+        // Solo restamos si ya estaba en estado estable
+        if (stableDiagnostics.sharpness) {
+          stabilityCounters.current.sharpness--;
+          if (stabilityCounters.current.sharpness <= STABILITY_THRESHOLD - SHARPNESS_GRACE_FRAMES) {
+            stabilityCounters.current.sharpness = 0;
+            setStableDiagnostics(prev => ({ ...prev, sharpness: false }));
+          }
+        } else {
+          stabilityCounters.current.sharpness = 0;
+          setStableDiagnostics(prev => ({ ...prev, sharpness: false }));
+        }
+      } else {
+        stabilityCounters.current[key] = 0;
+        setStableDiagnostics(prev => {
+          if (!prev[key]) return prev;
+          return { ...prev, [key]: false };
+        });
+      }
     }
-  }, []);
+  }, [stableDiagnostics.sharpness]);
 
   useEffect(() => {
     async function initLandmarker() {
@@ -203,10 +219,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 const variance = lapSqSum / count;
                 
                 // Umbral dinámico mejorado.
-                // Reducimos la base de 45 a 32 para ser menos frustrante pero mantener calidad.
-                // El resFactor compensa la pérdida de nitidez por pixel en resoluciones altas.
+                // Reducimos la base de 32 a 25 para ser mucho más permisivos.
                 const resFactor = Math.sqrt((vw * vh) / (1920 * 1080));
-                const dynamicThreshold = 32 * Math.max(0.7, Math.min(1.4, resFactor));
+                const dynamicThreshold = 25 * Math.max(0.7, Math.min(1.4, resFactor));
                 
                 updateStableDiagnostic('sharpness', variance > dynamicThreshold);
               }
