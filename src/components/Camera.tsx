@@ -17,11 +17,48 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Live Diagnostics State
-  const [lightingGood, setLightingGood] = useState(false);
-  const [facePositionGood, setFacePositionGood] = useState(false);
-  const [lookStraightGood, setLookStraightGood] = useState(false);
-  const [sharpnessGood, setSharpnessGood] = useState(false);
-  
+  const [diagnostics, setDiagnostics] = useState({
+    lighting: false,
+    position: false,
+    gaze: false,
+    sharpness: false
+  });
+
+  // Estabilidad de diagnósticos para evitar parpadeos
+  const [stableDiagnostics, setStableDiagnostics] = useState({
+    lighting: false,
+    position: false,
+    gaze: false,
+    sharpness: false
+  });
+
+  const stabilityCounters = useRef({
+    lighting: 0,
+    position: 0,
+    gaze: 0,
+    sharpness: 0
+  });
+
+  const STABILITY_THRESHOLD = 5; // Frames necesarios para cambiar estado
+
+  const updateStableDiagnostic = useCallback((key: keyof typeof diagnostics, value: boolean) => {
+    setDiagnostics(prev => {
+      if (value === prev[key]) {
+        stabilityCounters.current[key]++;
+        if (stabilityCounters.current[key] >= STABILITY_THRESHOLD) {
+          setStableDiagnostics(stable => {
+            if (stable[key] !== value) return { ...stable, [key]: value };
+            return stable;
+          });
+        }
+        return prev;
+      } else {
+        stabilityCounters.current[key] = 0;
+        return { ...prev, [key]: value };
+      }
+    });
+  }, [STABILITY_THRESHOLD]);
+
   const [isLandmarkerReady, setIsLandmarkerReady] = useState(false);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const requestRef = useRef<number>();
@@ -92,35 +129,53 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             const width = maxX - minX;
             const height = maxY - minY;
             
-            // 1. Posición y Tamaño (Ajustado para que la cabeza esté más cerca del lente)
-            const isCentered = centerX > 0.40 && centerX < 0.60 && centerY > 0.30 && centerY < 0.70;
-            const isGoodSize = width > 0.40 && width < 0.85 && height > 0.55 && height < 0.90;
-            setFacePositionGood(isCentered && isGoodSize);
+            const vw = video.videoWidth || 640;
+            const vh = video.videoHeight || 480;
+            const videoAR = vw / vh;
+            const isLandscape = videoAR > 1.2;
+
+            // 1. Posición y Tamaño Adaptativos
+            // En Landscape, el rostro ocupa menos % del ancho total.
+            // En Portrait, el rostro ocupa más % del ancho.
+            // La ALTURA (height) es la métrica más estable para el óvalo visual.
+            const isCenteredX = isLandscape 
+              ? (centerX > 0.40 && centerX < 0.60) // Más permisivo en horizontal para laptops
+              : (centerX > 0.42 && centerX < 0.58);
             
-            // 2. Orientación
+            const isCenteredY = centerY > 0.35 && centerY < 0.60;
+            
+            // Altura ideal del rostro respecto al frame para llenar el óvalo
+            const isGoodHeight = height > 0.55 && height < 0.85;
+            // Ancho adaptativo: en laptop (landscape) el rostro es ~25-40% del ancho, en móvil es ~50-70%
+            const isGoodWidth = isLandscape
+              ? (width > 0.25 && width < 0.50)
+              : (width > 0.45 && width < 0.80);
+            
+            updateStableDiagnostic('position', isCenteredX && isCenteredY && isGoodHeight && isGoodWidth);
+            
+            // 2. Orientación (Gaze/Look Straight)
             if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
               const matrix = results.facialTransformationMatrixes[0].data;
               const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
               const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
-              setLookStraightGood(Math.abs(yaw) < 25 && Math.abs(pitch) < 25);
+              // Un poco más permisivo con el pitch (inclinación) para laptops que suelen estar abajo
+              updateStableDiagnostic('gaze', Math.abs(yaw) < 15 && Math.abs(pitch) < 20);
             } else {
-              setLookStraightGood(false);
+              updateStableDiagnostic('gaze', false);
             }
 
-            // 3. Iluminación y Enfoque (Crop dinámico sobre la cara)
+            // 3. Iluminación y Enfoque (Sharpness) con normalización de resolución
             if (canvasRef.current) {
               const canvas = canvasRef.current;
               const ctx = canvas.getContext('2d', { willReadFrequently: true });
               if (ctx) {
-                const sampleSize = 160;
+                const sampleSize = 200;
                 if (canvas.width !== sampleSize) {
                   canvas.width = sampleSize;
                   canvas.height = sampleSize;
                 }
 
-                const vw = video.videoWidth || 640;
-                const vh = video.videoHeight || 480;
-                
+                // Muestreamos la zona de la frente/mejillas
                 const sx = Math.max(0, Math.min(vw - sampleSize, centerX * vw - sampleSize / 2));
                 const sy = Math.max(0, Math.min(vh - sampleSize, centerY * vh - sampleSize / 2));
                 
@@ -137,8 +192,9 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 }
                 
                 const avgB = bSum / (sampleSize * sampleSize);
-                setLightingGood(avgB > 70 && avgB < 230);
+                updateStableDiagnostic('lighting', avgB > 75 && avgB < 225);
 
+                // Laplacian Variance para Sharpness
                 let lapSum = 0;
                 let lapSqSum = 0;
                 const count = (sampleSize - 2) * (sampleSize - 2);
@@ -154,15 +210,21 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 
                 const lMean = lapSum / count;
                 const lVar = (lapSqSum / count) - (lMean * lMean);
-                // Umbral ajustado a 40 para ser más permisivo pero capturar borrosidad real
-                setSharpnessGood(lVar > 40);
+                
+                // Normalización de Sharpness: Cámaras de menor resolución (720p) generan menos varianza.
+                // Escalamos el umbral basado en la resolución vertical.
+                // 1080p es nuestro estándar (factor 1.0). 720p sería factor 0.66.
+                const sharpnessFactor = Math.min(1.2, Math.max(0.6, vh / 1080));
+                const dynamicThreshold = 55 * sharpnessFactor;
+                
+                updateStableDiagnostic('sharpness', lVar > dynamicThreshold);
               }
             }
           } else {
-            setFacePositionGood(false);
-            setLookStraightGood(false);
-            setLightingGood(false);
-            setSharpnessGood(false);
+            updateStableDiagnostic('position', false);
+            updateStableDiagnostic('gaze', false);
+            updateStableDiagnostic('lighting', false);
+            updateStableDiagnostic('sharpness', false);
           }
         } catch (e) {
           console.error("Error in diagnostics:", e);
@@ -171,7 +233,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     }
     
     requestRef.current = requestAnimationFrame(processFrame);
-  }, [capturedImage]);
+  }, [capturedImage, updateStableDiagnostic]);
 
   useEffect(() => {
     if (stream && !capturedImage && isLandmarkerReady) {
@@ -275,14 +337,13 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
 
   const handleRetake = () => {
     setCapturedImage(null);
-    setLightingGood(false);
-    setFacePositionGood(false);
-    setLookStraightGood(false);
-    setSharpnessGood(false);
+    setDiagnostics({ lighting: false, position: false, gaze: false, sharpness: false });
+    setStableDiagnostics({ lighting: false, position: false, gaze: false, sharpness: false });
+    stabilityCounters.current = { lighting: 0, position: 0, gaze: 0, sharpness: 0 };
     lastVideoTimeRef.current = -1;
   };
 
-  const allGood = lightingGood && facePositionGood && lookStraightGood && sharpnessGood;
+  const allGood = stableDiagnostics.lighting && stableDiagnostics.position && stableDiagnostics.gaze && stableDiagnostics.sharpness;
 
   return (
     <div className="relative w-full max-w-2xl mx-auto aspect-[3/4] sm:aspect-[4/5] max-h-[85vh] bg-zinc-100/90 dark:bg-zinc-900/90 rounded-lg overflow-hidden border border-zinc-400 dark:border-zinc-800 shadow-2xl">
@@ -313,10 +374,10 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               <>
                 <div className="absolute inset-0 pointer-events-none flex flex-col items-center pt-6 sm:pt-10 z-20 overflow-hidden">
                   <div className="flex gap-2 sm:gap-4 bg-black/20 backdrop-blur-xl p-2 rounded-lg border border-white/10 shadow-2xl">
-                    <DiagnosticTag label="Iluminación" active={lightingGood} />
-                    <DiagnosticTag label="Enfoque" active={sharpnessGood} />
-                    <DiagnosticTag label="Posición" active={facePositionGood} />
-                    <DiagnosticTag label="Mirada" active={lookStraightGood} />
+                    <DiagnosticTag label="Iluminación" active={stableDiagnostics.lighting} />
+                    <DiagnosticTag label="Enfoque" active={stableDiagnostics.sharpness} />
+                    <DiagnosticTag label="Posición" active={stableDiagnostics.position} />
+                    <DiagnosticTag label="Mirada" active={stableDiagnostics.gaze} />
                   </div>
                 </div>
                 
