@@ -145,13 +145,14 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
 
             // 1. Posición y Distancia (Tamaño)
             // Queremos que el rostro ocupe una parte significativa pero no todo el frame
-            const isCenteredX = centerX > 0.45 && centerX < 0.55;
-            const isCenteredY = centerY > 0.40 && centerY < 0.60;
+            // Hacemos el centrado un poco más permisivo (de 0.45-0.55 a 0.42-0.58)
+            const isCenteredX = centerX > 0.42 && centerX < 0.58;
+            const isCenteredY = centerY > 0.38 && centerY < 0.62;
             
-            // Incrementamos los requisitos de tamaño para evitar "error_src_face_too_small"
-            // El rostro debe ocupar al menos el 60-65% de la altura para que la API de Perfect Corp lo procese bien
-            const idealHeightMin = isLandscape ? 0.55 : 0.60;
-            const idealHeightMax = isLandscape ? 0.80 : 0.90;
+            // Ajustamos el rango de tamaño para ser más permisivo
+            // Mantenemos el mínimo alto para la API pero damos más margen (0.50 en lugar de 0.55/0.60)
+            const idealHeightMin = isLandscape ? 0.50 : 0.52;
+            const idealHeightMax = isLandscape ? 0.85 : 0.92;
             const isGoodDistance = faceHeight > idealHeightMin && faceHeight < idealHeightMax;
 
             updateStableDiagnostic('position', isCenteredX && isCenteredY && isGoodDistance);
@@ -488,7 +489,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                       scale: allGood ? 1.02 : 1,
                       borderColor: allGood ? 'rgba(52, 211, 153, 0.8)' : 'rgba(255, 255, 255, 0.2)'
                     }}
-                    className="w-[300px] h-[420px] sm:w-[360px] sm:h-[500px] rounded-[150px/210px] sm:rounded-[180px/250px] border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] transition-colors duration-500"
+                    className="w-[290px] h-[400px] sm:w-[340px] sm:h-[480px] rounded-[145px/200px] sm:rounded-[170px/240px] border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] transition-colors duration-500"
                   >
                     {/* Corner accents */}
                     <div className="absolute inset-0 border-2 border-transparent rounded-[inherit]">
