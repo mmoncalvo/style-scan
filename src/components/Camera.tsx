@@ -15,6 +15,11 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLandmarkerReady, setIsLandmarkerReady] = useState(false);
+
+  const landmarkerRef = useRef<FaceLandmarker | null>(null);
+  const lastVideoTimeRef = useRef(-1);
+  const requestRef = useRef<number | null>(null);
 
   // Live Diagnostics State
   const [diagnostics, setDiagnostics] = useState({
@@ -39,40 +44,35 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     sharpness: 0
   });
 
-  const STABILITY_THRESHOLD = 5; // Frames necesarios para cambiar estado
+  const STABILITY_THRESHOLD = 12; // ~400ms a 30fps para asegurar que el usuario esté quieto
 
   const updateStableDiagnostic = useCallback((key: keyof typeof diagnostics, value: boolean) => {
-    setDiagnostics(prev => {
-      if (value === prev[key]) {
-        stabilityCounters.current[key]++;
-        if (stabilityCounters.current[key] >= STABILITY_THRESHOLD) {
-          setStableDiagnostics(stable => {
-            if (stable[key] !== value) return { ...stable, [key]: value };
-            return stable;
-          });
-        }
-        return prev;
-      } else {
-        stabilityCounters.current[key] = 0;
-        return { ...prev, [key]: value };
+    setDiagnostics(prev => ({ ...prev, [key]: value }));
+    
+    if (value) {
+      stabilityCounters.current[key]++;
+      if (stabilityCounters.current[key] >= STABILITY_THRESHOLD) {
+        setStableDiagnostics(prev => {
+          if (prev[key]) return prev;
+          return { ...prev, [key]: true };
+        });
       }
-    });
-  }, [STABILITY_THRESHOLD]);
-
-  const [isLandmarkerReady, setIsLandmarkerReady] = useState(false);
-  const landmarkerRef = useRef<FaceLandmarker | null>(null);
-  const requestRef = useRef<number>();
-  const lastVideoTimeRef = useRef(-1);
+    } else {
+      stabilityCounters.current[key] = 0;
+      setStableDiagnostics(prev => {
+        if (!prev[key]) return prev;
+        return { ...prev, [key]: false };
+      });
+    }
+  }, []);
 
   useEffect(() => {
-    let active = true;
-    const initLandmarker = async () => {
+    async function initLandmarker() {
       try {
         const vision = await FilesetResolver.forVisionTasks(
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
         );
-        if (!active) return;
-        const landmarker = await FaceLandmarker.createFromOptions(vision, {
+        landmarkerRef.current = await FaceLandmarker.createFromOptions(vision, {
           baseOptions: {
             modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
             delegate: "GPU"
@@ -82,22 +82,15 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
           runningMode: "VIDEO",
           numFaces: 1
         });
-        if (!active) {
-            landmarker.close();
-            return;
-        }
-        landmarkerRef.current = landmarker;
         setIsLandmarkerReady(true);
       } catch (e) {
-        console.error("Failed to initialize face landmarker:", e);
+        console.error("Failed to initialize FaceLandmarker:", e);
+        setError("Error al inicializar el detector facial.");
       }
-    };
+    }
     initLandmarker();
     return () => {
-      active = false;
-      if (landmarkerRef.current) {
-        landmarkerRef.current.close();
-      }
+      landmarkerRef.current?.close();
     };
   }, []);
 
@@ -116,68 +109,67 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
           if (results.faceLandmarks && results.faceLandmarks.length > 0) {
             const landmarks = results.faceLandmarks[0];
             
-            let minX = 1, maxX = 0, minY = 1, maxY = 0;
-            landmarks.forEach(p => {
-              if (p.x < minX) minX = p.x;
-              if (p.x > maxX) maxX = p.x;
-              if (p.y < minY) minY = p.y;
-              if (p.y > maxY) maxY = p.y;
-            });
-            
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-            const width = maxX - minX;
-            const height = maxY - minY;
+            // Extraer puntos clave para un cálculo más preciso
+            // https://storage.googleapis.com/mediapipe-assets/documentation/face_grid_points.png
+            const leftEye = landmarks[33];
+            const rightEye = landmarks[263];
+            const noseTip = landmarks[1];
+            const chin = landmarks[152];
+            const forehead = landmarks[10];
+
+            // Cálculo de dimensiones del rostro
+            const faceWidth = Math.sqrt(Math.pow(rightEye.x - leftEye.x, 2) + Math.pow(rightEye.y - leftEye.y, 2));
+            const faceHeight = Math.sqrt(Math.pow(chin.x - forehead.x, 2) + Math.pow(chin.y - forehead.y, 2));
+            const centerX = (leftEye.x + rightEye.x) / 2;
+            const centerY = (forehead.y + chin.y) / 2;
             
             const vw = video.videoWidth || 640;
             const vh = video.videoHeight || 480;
-            const videoAR = vw / vh;
-            const isLandscape = videoAR > 1.2;
+            const isLandscape = vw > vh;
 
-            // 1. Posición y Tamaño Adaptativos
-            // En Landscape, el rostro ocupa menos % del ancho total.
-            // En Portrait, el rostro ocupa más % del ancho.
-            // La ALTURA (height) es la métrica más estable para el óvalo visual.
-            const isCenteredX = isLandscape 
-              ? (centerX > 0.40 && centerX < 0.60) // Más permisivo en horizontal para laptops
-              : (centerX > 0.42 && centerX < 0.58);
+            // 1. Posición y Distancia (Tamaño)
+            // Queremos que el rostro ocupe una parte significativa pero no todo el frame
+            const isCenteredX = centerX > 0.45 && centerX < 0.55;
+            const isCenteredY = centerY > 0.40 && centerY < 0.60;
             
-            const isCenteredY = centerY > 0.35 && centerY < 0.60;
+            // El rostro debe tener un tamaño "ideal" para garantizar resolución en el análisis
+            // En vertical (móvil), el rostro debería ocupar ~50-70% de la altura
+            // En horizontal (laptop), el rostro debería ocupar ~40-60% de la altura
+            const idealHeightMin = isLandscape ? 0.45 : 0.50;
+            const idealHeightMax = isLandscape ? 0.70 : 0.85;
+            const isGoodDistance = faceHeight > idealHeightMin && faceHeight < idealHeightMax;
+
+            updateStableDiagnostic('position', isCenteredX && isCenteredY && isGoodDistance);
             
-            // Altura ideal del rostro respecto al frame para llenar el óvalo
-            const isGoodHeight = height > 0.55 && height < 0.85;
-            // Ancho adaptativo: en laptop (landscape) el rostro es ~25-40% del ancho, en móvil es ~50-70%
-            const isGoodWidth = isLandscape
-              ? (width > 0.25 && width < 0.50)
-              : (width > 0.45 && width < 0.80);
-            
-            updateStableDiagnostic('position', isCenteredX && isCenteredY && isGoodHeight && isGoodWidth);
-            
-            // 2. Orientación (Gaze/Look Straight)
+            // 2. Orientación (Gaze/Tilt)
             if (results.facialTransformationMatrixes && results.facialTransformationMatrixes.length > 0) {
               const matrix = results.facialTransformationMatrixes[0].data;
+              // Rotación en radianes convertida a grados
               const yaw = Math.atan2(-matrix[8], Math.sqrt(matrix[9]*matrix[9] + matrix[10]*matrix[10])) * (180 / Math.PI);
               const pitch = Math.atan2(matrix[9], matrix[10]) * (180 / Math.PI);
-              // Un poco más permisivo con el pitch (inclinación) para laptops que suelen estar abajo
-              updateStableDiagnostic('gaze', Math.abs(yaw) < 15 && Math.abs(pitch) < 20);
-            } else {
-              updateStableDiagnostic('gaze', false);
+              const roll = Math.atan2(matrix[4], matrix[0]) * (180 / Math.PI);
+
+              // Tolerancias estrictas para asegurar un buen escaneo
+              const isLookingStraight = Math.abs(yaw) < 12 && Math.abs(pitch) < 15 && Math.abs(roll) < 10;
+              updateStableDiagnostic('gaze', isLookingStraight);
             }
 
-            // 3. Iluminación y Enfoque (Sharpness) con normalización de resolución
+            // 3. Iluminación y Sharpness Pro (Muestreo Multi-zona)
             if (canvasRef.current) {
               const canvas = canvasRef.current;
               const ctx = canvas.getContext('2d', { willReadFrequently: true });
               if (ctx) {
-                const sampleSize = 200;
+                const sampleSize = 160;
                 if (canvas.width !== sampleSize) {
                   canvas.width = sampleSize;
                   canvas.height = sampleSize;
                 }
 
-                // Muestreamos la zona de la frente/mejillas
-                const sx = Math.max(0, Math.min(vw - sampleSize, centerX * vw - sampleSize / 2));
-                const sy = Math.max(0, Math.min(vh - sampleSize, centerY * vh - sampleSize / 2));
+                // Muestreamos el área de los ojos/entrecejo para el enfoque, ya que tiene más contraste.
+                // Usamos el punto 168 (glabella/entrecejo) como ancla.
+                const glabella = landmarks[168] || noseTip;
+                const sx = Math.max(0, Math.min(vw - sampleSize, glabella.x * vw - sampleSize / 2));
+                const sy = Math.max(0, Math.min(vh - sampleSize, glabella.y * vh - sampleSize / 2));
                 
                 ctx.drawImage(video, sx, sy, sampleSize, sampleSize, 0, 0, sampleSize, sampleSize);
                 const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
@@ -192,42 +184,39 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 }
                 
                 const avgB = bSum / (sampleSize * sampleSize);
-                updateStableDiagnostic('lighting', avgB > 75 && avgB < 225);
+                // Iluminación óptima: 80-230. Expandimos un poco el rango superior.
+                updateStableDiagnostic('lighting', avgB > 80 && avgB < 230);
 
-                // Laplacian Variance para Sharpness
-                let lapSum = 0;
+                // Cálculo de Varianza Laplaciana optimizado
                 let lapSqSum = 0;
                 const count = (sampleSize - 2) * (sampleSize - 2);
                 
                 for (let y = 1; y < sampleSize - 1; y++) {
+                  const row = y * sampleSize;
                   for (let x = 1; x < sampleSize - 1; x++) {
-                    const idx = y * sampleSize + x;
+                    const idx = row + x;
                     const lap = gray[idx - sampleSize] + gray[idx - 1] - 4 * gray[idx] + gray[idx + 1] + gray[idx + sampleSize];
-                    lapSum += lap;
                     lapSqSum += lap * lap;
                   }
                 }
                 
-                const lMean = lapSum / count;
-                const lVar = (lapSqSum / count) - (lMean * lMean);
+                const variance = lapSqSum / count;
                 
-                // Normalización de Sharpness: Cámaras de menor resolución (720p) generan menos varianza.
-                // Escalamos el umbral basado en la resolución vertical.
-                // 1080p es nuestro estándar (factor 1.0). 720p sería factor 0.66.
-                const sharpnessFactor = Math.min(1.2, Math.max(0.6, vh / 1080));
-                const dynamicThreshold = 55 * sharpnessFactor;
+                // Umbral dinámico mejorado.
+                // Reducimos la base de 45 a 32 para ser menos frustrante pero mantener calidad.
+                // El resFactor compensa la pérdida de nitidez por pixel en resoluciones altas.
+                const resFactor = Math.sqrt((vw * vh) / (1920 * 1080));
+                const dynamicThreshold = 32 * Math.max(0.7, Math.min(1.4, resFactor));
                 
-                updateStableDiagnostic('sharpness', lVar > dynamicThreshold);
+                updateStableDiagnostic('sharpness', variance > dynamicThreshold);
               }
             }
           } else {
-            updateStableDiagnostic('position', false);
-            updateStableDiagnostic('gaze', false);
-            updateStableDiagnostic('lighting', false);
-            updateStableDiagnostic('sharpness', false);
+            // Resetear diagnósticos si no hay rostro
+            ['position', 'gaze', 'lighting', 'sharpness'].forEach(k => updateStableDiagnostic(k as any, false));
           }
         } catch (e) {
-          console.error("Error in diagnostics:", e);
+          console.error("Error in diagnostics loop:", e);
         }
       }
     }
@@ -249,27 +238,52 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     setError(null);
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setError("Tu navegador o el entorno actual no soporta el acceso a la cámara. Prueba abriendo la aplicación en una pestaña nueva.");
+      setError("Tu navegador no soporta el acceso a la cámara. Intenta con una versión actualizada.");
       setIsLoading(false);
       return;
     }
 
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
+      // Intentar obtener la resolución máxima posible
+      const constraints: MediaStreamConstraints = {
         video: {
           facingMode: 'user',
-          width: { ideal: 3840 },
-          height: { ideal: 2160 }
+          width: { min: 640, ideal: 1920, max: 3840 },
+          height: { min: 480, ideal: 1080, max: 2160 },
+          frameRate: { ideal: 30 }
         },
         audio: false
-      });
+      };
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      // Intentar aplicar configuraciones avanzadas si el navegador lo permite
+      const track = mediaStream.getVideoTracks()[0];
+      if (track && track.getCapabilities) {
+        const capabilities = track.getCapabilities();
+        const settings: MediaTrackSettings = {};
+        
+        // Preferir enfoque continuo si está disponible
+        if ('focusMode' in capabilities && (capabilities as any).focusMode.includes('continuous')) {
+          (settings as any).focusMode = 'continuous';
+        }
+        
+        if (Object.keys(settings).length > 0) {
+          try {
+            await track.applyConstraints({ advanced: [settings] as any });
+          } catch (e) {
+            console.warn("Could not apply advanced constraints:", e);
+          }
+        }
+      }
+
       setStream(mediaStream);
     } catch (err: any) {
       console.error("Error accessing camera:", err);
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError("Permiso denegado. Por favor, permite el acceso a la cámara y recarga la página. Si estás en el editor, intenta abrir la app en una pestaña nueva.");
+        setError("Permiso denegado. Por favor, permite el acceso a la cámara.");
       } else {
-        setError("No se pudo acceder a la cámara. Intenta abrir la aplicación en una pestaña nueva para evitar restricciones del editor.");
+        setError("No se pudo acceder a la cámara. Verifica que no esté siendo usada por otra aplicación.");
       }
     } finally {
       setIsLoading(false);
@@ -303,27 +317,42 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     }
   }, [stream]);
 
-  const capturePhoto = () => {
+  const capturePhoto = useCallback(async () => {
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
+      
+      // Aseguramos que el canvas tenga exactamente la resolución del stream de video
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
       if (ctx) {
-        // Mirror the image horizontally to match the preview
-        ctx.translate(canvas.width, 0);
+        // Mejorar calidad de escalado si fuera necesario (aunque aquí es 1:1)
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        // Espejar la imagen para que coincida con lo que el usuario ve
+        ctx.save();
+        ctx.translate(width, 0);
         ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        // Reset transformation for future drawings
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-        setCapturedImage(dataUrl);
+        ctx.drawImage(video, 0, 0, width, height);
+        ctx.restore();
+
+        // Usar toBlob en lugar de toDataURL para mejor manejo de memoria y calidad
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            setCapturedImage(url);
+          }
+        }, 'image/jpeg', 0.95); // Aumentamos calidad a 0.95
       }
     }
-  };
+  }, []);
 
-  const handleConfirm = async () => {
+  const handleConfirm = useCallback(async () => {
     if (capturedImage) {
       try {
         const res = await fetch(capturedImage);
@@ -333,7 +362,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
         console.error("Error creating blob from image:", err);
       }
     }
-  };
+  }, [capturedImage, onCapture]);
 
   const handleRetake = () => {
     setCapturedImage(null);
@@ -343,10 +372,40 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
     lastVideoTimeRef.current = -1;
   };
 
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownTimer = useRef<NodeJS.Timeout | null>(null);
+
   const allGood = stableDiagnostics.lighting && stableDiagnostics.position && stableDiagnostics.gaze && stableDiagnostics.sharpness;
 
+  useEffect(() => {
+    if (allGood && !capturedImage) {
+      if (countdown === null) {
+        setCountdown(3);
+        countdownTimer.current = setInterval(() => {
+          setCountdown(prev => {
+            if (prev === 1) {
+              clearInterval(countdownTimer.current!);
+              capturePhoto();
+              return null;
+            }
+            return prev ? prev - 1 : null;
+          });
+        }, 800);
+      }
+    } else {
+      if (countdownTimer.current) {
+        clearInterval(countdownTimer.current);
+        countdownTimer.current = null;
+      }
+      setCountdown(null);
+    }
+    return () => {
+      if (countdownTimer.current) clearInterval(countdownTimer.current);
+    };
+  }, [allGood, capturedImage, capturePhoto]);
+
   return (
-    <div className="relative w-full max-w-2xl mx-auto aspect-[3/4] sm:aspect-[4/5] max-h-[85vh] bg-zinc-100/90 dark:bg-zinc-900/90 rounded-lg overflow-hidden border border-zinc-400 dark:border-zinc-800 shadow-2xl">
+    <div className="relative w-full max-w-2xl mx-auto aspect-[3/4] sm:aspect-[4/5] max-h-[85vh] bg-zinc-900 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
       <AnimatePresence mode="wait">
         {!capturedImage ? (
           <motion.div
@@ -363,63 +422,115 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
               muted
               className="w-full h-full object-cover scale-x-[-1]"
             />
+            
+            {/* Capa de Gradiente para UI */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none" />
+
             {isLoading && !error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-100/90 dark:bg-zinc-900/90 gap-4 z-20">
-                <RefreshCw className="w-8 h-8 text-emerald-500 animate-spin" />
-                <p className="text-zinc-400 text-sm animate-pulse">Iniciando cámara...</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 gap-4 z-50">
+                <div className="relative">
+                  <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin" />
+                  <div className="absolute inset-0 blur-lg bg-emerald-500/20 animate-pulse" />
+                </div>
+                <p className="text-zinc-400 text-sm font-medium tracking-wide">CALIBRANDO SENSOR...</p>
               </div>
             )}
             
             {!isLoading && !error && (
               <>
-                <div className="absolute inset-0 pointer-events-none flex flex-col items-center pt-6 sm:pt-10 z-20 overflow-hidden">
-                  <div className="flex gap-2 sm:gap-4 bg-black/20 backdrop-blur-xl p-2 rounded-lg border border-white/10 shadow-2xl">
-                    <DiagnosticTag label="Iluminación" active={stableDiagnostics.lighting} />
+                <div className="absolute top-6 inset-x-0 flex justify-center z-30 px-4">
+                  <div className="flex flex-wrap justify-center gap-2 bg-black/40 backdrop-blur-md p-2 rounded-2xl border border-white/10">
+                    <DiagnosticTag label="Luz" active={stableDiagnostics.lighting} />
                     <DiagnosticTag label="Enfoque" active={stableDiagnostics.sharpness} />
                     <DiagnosticTag label="Posición" active={stableDiagnostics.position} />
                     <DiagnosticTag label="Mirada" active={stableDiagnostics.gaze} />
                   </div>
                 </div>
                 
-                {/* Oval Guía - Centrado absoluto y aumentado de tamaño para forzar cercanía */}
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
-                  <div className={`w-[280px] h-[380px] sm:w-[340px] sm:h-[460px] rounded-full border-4 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)] transition-colors duration-300 ${allGood ? 'border-emerald-400/50' : 'border-white/30'}`} />
+                {/* Oval Guía Dinámico */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+                  <motion.div 
+                    animate={{ 
+                      scale: allGood ? 1.02 : 1,
+                      borderColor: allGood ? 'rgba(52, 211, 153, 0.8)' : 'rgba(255, 255, 255, 0.2)'
+                    }}
+                    className="w-[280px] h-[380px] sm:w-[320px] sm:h-[440px] rounded-[140px/190px] sm:rounded-[160px/220px] border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] transition-colors duration-500"
+                  >
+                    {/* Corner accents */}
+                    <div className="absolute inset-0 border-2 border-transparent rounded-[inherit]">
+                      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-4 h-1 rounded-full transition-colors ${allGood ? 'bg-emerald-400' : 'bg-white/40'}`} />
+                      <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-1 rounded-full transition-colors ${allGood ? 'bg-emerald-400' : 'bg-white/40'}`} />
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Feedback de Auto-capture */}
+                <AnimatePresence>
+                  {countdown !== null && (
+                    <motion.div 
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 1.5, opacity: 0 }}
+                      className="absolute inset-0 flex items-center justify-center z-40"
+                    >
+                      <div className="text-8xl font-bold text-white drop-shadow-2xl">
+                        {countdown}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Instrucciones Pro */}
+                <div className="absolute bottom-28 inset-x-0 text-center z-30 px-6">
+                  <p className="text-white/80 text-sm font-medium drop-shadow-md">
+                    {allGood 
+                      ? "Mantente quieto, capturando..." 
+                      : "Ubica tu rostro dentro del óvalo y busca buena iluminación"}
+                  </p>
                 </div>
               </>
             )}
 
             {error && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center gap-6 z-20 bg-zinc-100/90 dark:bg-zinc-900/90">
-                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
-                  <AlertCircle className="w-8 h-8 text-red-500" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center gap-6 z-50 bg-zinc-900">
+                <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center mb-2">
+                  <AlertCircle className="w-10 h-10 text-red-500" />
                 </div>
-                <div className="space-y-2">
-                  <p className="text-red-400 font-medium text-lg">Error de Cámara</p>
-                  <p className="text-zinc-400 text-sm max-w-sm">{error}</p>
+                <div className="space-y-3">
+                  <h3 className="text-white font-semibold text-xl">Error de Configuración</h3>
+                  <p className="text-zinc-400 text-sm max-w-xs mx-auto leading-relaxed">{error}</p>
                 </div>
-                <button
-                  onClick={() => window.open(window.location.href, '_blank')}
-                  className="px-6 py-2 bg-white text-black rounded-lg font-medium hover:bg-zinc-200 transition-colors"
-                >
-                  Abrir en pestaña nueva
-                </button>
-                <button
-                  onClick={startCamera}
-                  className="text-zinc-500 text-xs hover:text-zinc-300 underline"
-                >
-                  Reintentar en esta ventana
-                </button>
+                <div className="flex flex-col gap-3 w-full max-w-xs">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="w-full py-3 bg-white text-black rounded-xl font-bold hover:bg-zinc-200 transition-all active:scale-95"
+                  >
+                    Reintentar
+                  </button>
+                </div>
               </div>
             )}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+
+            {/* Botón de captura manual (Solo como respaldo si no hay auto-capture) */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
               <button
                 onClick={capturePhoto}
                 disabled={isAnalyzing || !!error || !allGood}
-                className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:bg-gray-300"
+                className={`
+                  relative group w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500
+                  ${allGood ? 'bg-white scale-110 shadow-xl' : 'bg-white/10 scale-100'}
+                  disabled:opacity-20
+                `}
               >
-                <div className="w-14 h-14 rounded-full border-2 border-zinc-900 flex items-center justify-center">
-                  <CameraIcon className={`w-6 h-6 ${!allGood ? 'text-gray-400' : 'text-zinc-900'}`} />
+                <div className={`
+                  w-16 h-16 rounded-full border-2 flex items-center justify-center transition-colors
+                  ${allGood ? 'border-zinc-900' : 'border-white/20'}
+                `}>
+                  <CameraIcon className={`w-8 h-8 transition-colors ${allGood ? 'text-zinc-900' : 'text-white/40'}`} />
                 </div>
+                {allGood && (
+                  <div className="absolute inset-0 rounded-full border-4 border-emerald-500 animate-ping opacity-20" />
+                )}
               </button>
             </div>
           </motion.div>
@@ -429,29 +540,40 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="relative w-full h-full"
+            className="relative w-full h-full bg-black"
           >
-            <img src={capturedImage} alt="Captured" className="w-full h-full object-cover" />
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4 z-20">
-              <button
-                onClick={handleRetake}
-                className="px-6 py-3 rounded-lg bg-zinc-800 text-white flex items-center gap-2 hover:bg-zinc-700 transition-colors"
-              >
-                <RefreshCw className="w-5 h-5" />
-                Repetir
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={isAnalyzing}
-                className="px-6 py-3 rounded-lg bg-emerald-500 text-white flex items-center gap-2 hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-50"
-              >
-                {isAnalyzing ? (
-                  <RefreshCw className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Check className="w-5 h-5" />
-                )}
-                Analizar
-              </button>
+            <img src={capturedImage} alt="Captured" className="w-full h-full object-contain" />
+            
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+
+            <div className="absolute bottom-10 left-0 right-0 px-6 flex flex-col gap-4 z-30">
+              <div className="text-center mb-2">
+                <h4 className="text-white font-semibold text-lg">¿La imagen es clara?</h4>
+                <p className="text-white/60 text-xs">Asegúrate que no haya sombras fuertes o desenfoque.</p>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={handleRetake}
+                  className="flex-1 py-4 rounded-2xl bg-zinc-800/80 backdrop-blur-md text-white font-bold flex items-center justify-center gap-2 hover:bg-zinc-700 transition-all active:scale-95"
+                >
+                  <RefreshCw className="w-5 h-5" />
+                  REPETIR
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  disabled={isAnalyzing}
+                  className="flex-[1.5] py-4 rounded-2xl bg-emerald-500 text-white font-bold flex items-center justify-center gap-2 hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                >
+                  {isAnalyzing ? (
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Check className="w-6 h-6" />
+                      ANALIZAR PIEL
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -461,15 +583,16 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   );
 };
 
-// Componente auxiliar para los tags de diagnóstico con diseño premium
+// Componente auxiliar para los tags de diagnóstico con diseño ultra-moderno
 const DiagnosticTag: React.FC<{ label: string, active: boolean }> = ({ label, active }) => (
   <div className={`
-    flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-500
+    flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-700
     ${active 
-      ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' 
-      : 'bg-white/5 border-white/10 text-white/40'}
-    border backdrop-blur-md
+      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+      : 'bg-white/5 border-white/5 text-white/20'}
+    border
   `}>
-    <span className="text-[10px] font-bold tracking-widest uppercase">{label}</span>
+    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-700 ${active ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-white/10'}`} />
+    <span className="text-[10px] font-bold tracking-widest uppercase whitespace-nowrap">{label}</span>
   </div>
 );
