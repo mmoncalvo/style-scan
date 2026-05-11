@@ -7,7 +7,7 @@
     "fullName": "Administrador",
     "email": "admin@example.com",
     "createdAt": "2026-04-24T22:09:41.322Z",
-    "updatedAt": "2026-04-24T22:09:41.322Z"
+    "updatedAt": "2026-05-05T04:28:15.978Z"
   },
   {
     "id": "def75906-3320-4f65-b99b-e62356e367a5",
@@ -17,7 +17,7 @@
     "fullName": "Cliente de Prueba",
     "email": "cliente@example.com",
     "createdAt": "2026-04-24T22:09:41.446Z",
-    "updatedAt": "2026-04-24T22:09:41.446Z"
+    "updatedAt": "2026-05-05T04:28:15.989Z"
   },
   {
     "id": "c2ae05d7-42c4-4495-9d8d-af27c9af1df1",
@@ -27,6 +27,6 @@
     "fullName": "marco moncalvo",
     "email": "m_moncalvo@hotmail.com",
     "createdAt": "2026-04-25T18:29:09.990Z",
-    "updatedAt": "2026-04-25T18:29:09.990Z"
+    "updatedAt": "2026-05-05T04:28:15.995Z"
   }
 ]

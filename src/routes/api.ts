@@ -172,7 +172,8 @@ router.get("/products", async (req: any, res: any) => {
 
 router.post("/products", authenticate, isAdmin, async (req: any, res: any) => {
   try {
-    const data = { ...req.body };
+    const { id, ...data } = req.body;
+    // La data de frontend ya viene preparada, si 'images' es un array lo stringifyamos
     if (Array.isArray(data.images)) {
       data.images = JSON.stringify(data.images);
     }
@@ -189,7 +190,8 @@ router.put("/products/:id", authenticate, isAdmin, async (req: any, res: any) =>
     const product: any = await Product.findByPk(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });
 
-    const data = { ...req.body };
+    const { id, ...data } = req.body;
+    // Asegurar que 'images' se guarde como string JSON en la base de datos
     if (Array.isArray(data.images)) {
       data.images = JSON.stringify(data.images);
     }

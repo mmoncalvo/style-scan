@@ -161,24 +161,38 @@ const ProductForm = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar imágenes
     if (!formData.images || formData.images.length === 0) {
       toast.error('Debes subir al menos una imagen');
       return;
     }
+    
     try {
+      // Preparamos payload manteniendo los datos exactos del form
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        price: Number(formData.price),
+        target: formData.target,
+        range: Number(formData.range),
+        images: formData.images // Backend espera array, lo convertirá a string JSON
+      };
+
       if (isEditing && formData.id) {
-        await axios.put(`/api/products/${String(formData.id)}`, formData, {
+        await axios.put(`/api/products/${String(formData.id)}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Producto actualizado correctamente');
       } else {
-        await axios.post('/api/products', formData, {
+        await axios.post('/api/products', payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Producto creado correctamente');
       }
       onSave();
     } catch (err) {
+      console.error("Save error:", err);
       toast.error('Error al guardar producto');
     }
   };
@@ -337,17 +351,20 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
         onClick: async () => {
           try {
             await axios.delete(`/api/products/${String(id)}`, {
-              headers: { Authorization: `Bearer ${token}` }
+              headers: { 
+                'Authorization': `Bearer ${token}` 
+              }
             });
             toast.success('Producto eliminado');
             fetchProducts();
           } catch (err) {
+            console.error("Delete error:", err);
             toast.error('No se pudo eliminar');
           }
         }
       }
     });
-  }, [token]);
+  }, [token, fetchProducts]);
 
   const handleEdit = useCallback((product: Product) => {
     setCurrentProduct(product);
