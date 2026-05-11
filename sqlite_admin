@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+echo -e "\015\012\033[0;36mstart sqlite_admin command!!\033[0m\012"
+
+if [ -z $1 ]; then
+	message="missing argument path to database file."
+	echo -e "\015\012\033[0;33m$message\033[0m\012"
+	exit 1
+fi
+
+sqlite_web -H 0.0.0.0 -p 5555 -x $1
