@@ -45,7 +45,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
   });
 
   const STABILITY_THRESHOLD = 15; // ~500ms para validación inicial
-  const SHARPNESS_GRACE_FRAMES = 8; // Permitir ~250ms de desenfoque momentáneo antes de invalidar
+  const SHARPNESS_GRACE_FRAMES = 12; // Aumentamos a ~400ms de gracia para iPhone 13/14
 
   const updateStableDiagnostic = useCallback((key: keyof typeof diagnostics, value: boolean) => {
     setDiagnostics(prev => ({ ...prev, [key]: value }));
@@ -63,7 +63,7 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
       if (key === 'sharpness') {
         // Solo restamos si ya estaba en estado estable
         if (stableDiagnostics.sharpness) {
-          stabilityCounters.current.sharpness--;
+          stabilityCounters.current.sharpness -= 0.5; // Decremento más lento para "sujetar" el enfoque
           if (stabilityCounters.current.sharpness <= STABILITY_THRESHOLD - SHARPNESS_GRACE_FRAMES) {
             stabilityCounters.current.sharpness = 0;
             setStableDiagnostics(prev => ({ ...prev, sharpness: false }));
@@ -217,14 +217,15 @@ export const Camera: React.FC<CameraProps> = ({ onCapture, isAnalyzing }) => {
                 }
                 
                 const variance = lapSqSum / count;
-                
-                // Umbral dinámico mejorado.
-                // Reducimos la base de 32 a 25 para ser mucho más permisivos.
+
+                // Umbral dinámico mejorado para iPhone 13/14.
+                // Reducimos la base de 25 a 16. Los sensores más modernos tienen un procesado de
+                // reducción de ruido que puede suavizar los bordes (disminuyendo la varianza),
+                // por lo que necesitamos ser mucho más permisivos.
                 const resFactor = Math.sqrt((vw * vh) / (1920 * 1080));
-                const dynamicThreshold = 25 * Math.max(0.7, Math.min(1.4, resFactor));
-                
-                updateStableDiagnostic('sharpness', variance > dynamicThreshold);
-              }
+                const dynamicThreshold = 16 * Math.max(0.6, Math.min(1.5, resFactor));
+
+                updateStableDiagnostic('sharpness', variance > dynamicThreshold);              }
             }
           } else {
             // Resetear diagnósticos si no hay rostro
