@@ -9,7 +9,7 @@ interface ProductManagerProps {
   token: string;
 }
 
-const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Product, onEdit: (p: Product) => void, onDelete: (id: number) => void }) => {
+const ProductItem = React.memo(({ product, onEdit, onDelete }: { product: Product, onEdit: (p: Product) => void, onDelete: (id: string) => void }) => {
   const targets: Record<string, string> = {
     spots: "Puntos",
     wrinkles: "Arrugas",
@@ -167,7 +167,7 @@ const ProductForm = ({
     }
     try {
       if (isEditing && formData.id) {
-        await axios.put(`/api/products/${formData.id}`, formData, {
+        await axios.put(`/api/products/${String(formData.id)}`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Producto actualizado correctamente');
@@ -329,14 +329,14 @@ export const ProductManager: React.FC<ProductManagerProps> = ({ token }) => {
     fetchProducts();
   }, []);
 
-  const handleDelete = useCallback(async (id: number) => {
+  const handleDelete = useCallback(async (id: string) => {
     toast('¿Eliminar este producto?', {
       description: 'Esta acción no se puede deshacer.',
       action: {
         label: 'Eliminar',
         onClick: async () => {
           try {
-            await axios.delete(`/api/products/${id}`, {
+            await axios.delete(`/api/products/${String(id)}`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             toast.success('Producto eliminado');

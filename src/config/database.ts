@@ -75,6 +75,7 @@ export const Analysis = sequelize.define('Analysis', {
 export const Product = sequelize.define('Product', {
   id: {
     type: DataTypes.STRING,
+    defaultValue: () => crypto.randomUUID(),
     primaryKey: true
   },
   target: {
