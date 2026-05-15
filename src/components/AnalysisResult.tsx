@@ -324,7 +324,7 @@ export const AnalysisResult: React.FC<AnalysisResultProps> = ({ result, allProdu
         <div className="relative group">
           <div
             ref={carouselRef}
-            className="overflow-x-auto scrollbar-hide flex gap-6 pb-6 px-4 snap-x scroll-smooth justify-start md:justify-center"
+            className="overflow-x-auto scrollbar-hide flex gap-6 pb-6 px-4 snap-x scroll-smooth justify-start"
           >
             {metrics.map((metric, idx) => (
               <motion.div
